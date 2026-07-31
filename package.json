@@ -12,6 +12,9 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.1.6"
+    "@master/css": "^1.37.8",
+    "astro": "^7.1.6",
+    "zod": "^4.4.3",
+    "zod-class": "^0.0.18"
   }
 }
