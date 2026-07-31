@@ -55,128 +55,89 @@ const tickets = [
         fecha: "2023-10-20 10:05",
     },
 ];
+
+const badgeClass = (c: string) =>
+    ({
+        blue: "bg-primary",
+        orange: "bg-warning text-dark",
+        green: "bg-success",
+        red: "bg-danger",
+        gray: "bg-secondary",
+    })[c] ?? "bg-secondary";
 ---
 
 <DashboardLayout pageTitle="Gestión de Tickets">
-    <div
-        class="bg:white r:8 shadow:0|2|8|rgba(0,0,0,0.04) border:1|solid|gray-10 overflow:hidden"
-    >
+    <div class="card">
         <!-- Toolbar -->
         <div
-            class="px:24 py:16 border-b:1|solid|gray-10 d:flex ai:center jc:space-between flex:wrap gap:16"
+            class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-3"
         >
-            <div class="d:flex ai:center gap:12">
-                <div class="relative">
-                    <Search
-                        class="absolute left:12 top:50% translate-y:-50% text:gray-40"
-                        width="16"
-                        height="16"
-                        stroke-width="2"
-                    />
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group" style="width: 250px">
+                    <span class="input-group-text bg-white">
+                        <Search width="16" height="16" stroke-width="2" />
+                    </span>
                     <input
                         type="text"
+                        class="form-control border-start-0 ps-0"
                         placeholder="Buscar tickets..."
-                        class="h:36 pl:36 pr:12 r:4 border:1|solid|gray-30 bg:white outline:none:focus border:#0984e3:focus shadow:0|0|0|3|rgba(9,132,227,0.1):focus transition:all|0.2s text:13 w:250"
                     />
                 </div>
-                <button
-                    class="h:36 px:16 bg:white border:1|solid|gray-30 r:4 text:13 font:medium text:gray-70 cursor:pointer hover:bg:gray-5 transition:all|0.2s d:flex ai:center gap:8"
-                >
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-2">
                     <Funnel width="16" height="16" stroke-width="2" />
                     Filtros
                 </button>
             </div>
 
-            <button class="btn btn-primary">
+            <button class="btn btn-primary d-flex align-items-center gap-2">
                 <Plus width="16" height="16" stroke-width="2" />
                 Nuevo Ticket
             </button>
         </div>
 
         <!-- Table -->
-        <div class="overflow-x:auto">
-            <table class="w:100% border-collapse text:left">
-                <thead>
-                    <tr class="bg:gray-5 border-b:1|solid|gray-20">
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:60"
-                            >ID</th
-                        >
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1"
-                            >Título</th
-                        >
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:120"
-                            >Estado</th
-                        >
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:120"
-                            >Prioridad</th
-                        >
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:150"
-                            >Creador</th
-                        >
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:150"
-                            >Fecha</th
-                        >
-                        <th
-                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:80 text:right"
-                            >Acciones</th
-                        >
+        <div class="table-responsive">
+            <table class="table table-hover align-middle m-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-uppercase small text-secondary">ID</th>
+                        <th class="text-uppercase small text-secondary">Título</th>
+                        <th class="text-uppercase small text-secondary">Estado</th>
+                        <th class="text-uppercase small text-secondary">Prioridad</th>
+                        <th class="text-uppercase small text-secondary">Creador</th>
+                        <th class="text-uppercase small text-secondary">Fecha</th>
+                        <th class="text-uppercase small text-secondary text-end">
+                            Acciones
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {
-                        tickets.map((ticket, index) => (
-                            <tr
-                                class={`border-b:1|solid|gray-10 hover:bg:gray-5 transition:bg|0.2s ${index === tickets.length - 1 ? "border-b:none" : ""}`}
-                            >
-                                <td class="py:16 px:24 text:13 font:medium text:gray-60">
+                        tickets.map((ticket) => (
+                            <tr>
+                                <td class="text-secondary fw-medium">
                                     #{ticket.id}
                                 </td>
-                                <td class="py:16 px:24 text:14 font:medium text:gray-90">
-                                    {ticket.titulo}
-                                </td>
-                                <td class="py:16 px:24">
-                                    <span
-                                        class={`inline-flex ai:center px:8 py:4 r:4 text:11 font:semibold bg:${ticket.estadoColor}-10 color:white`}
-                                    >
+                                <td class="fw-medium">{ticket.titulo}</td>
+                                <td>
+                                    <span class={`badge ${badgeClass(ticket.estadoColor)}`}>
                                         {ticket.estado}
                                     </span>
                                 </td>
-                                <td class="py:16 px:24">
-                                    <span
-                                        class={`inline-flex ai:center px:8 py:4 r:4 text:11 font:semibold bg:${ticket.prioridadColor}-10 color:white`}
-                                    >
+                                <td>
+                                    <span class={`badge ${badgeClass(ticket.prioridadColor)}`}>
                                         {ticket.prioridad}
                                     </span>
                                 </td>
-                                <td class="py:16 px:24 text:13 text:gray-70">
-                                    {ticket.creador}
-                                </td>
-                                <td class="py:16 px:24 text:13 text:gray-60">
-                                    {ticket.fecha}
-                                </td>
-                                <td class="py:16 px:24 text:right">
-                                    <div class="d:flex ai:center jc:flex-end gap:8">
-                                        <button class="bg:transparent border:none cursor:pointer text:gray-40 hover:text:#0984e3 transition:colors|0.2s p:4 r:4 hover:bg:#0984e3|10">
-                                            <SquarePen
-                                                width="18"
-                                                height="18"
-                                                stroke-width="2"
-                                            />
-                                        </button>
-                                        <button class="bg:transparent border:none cursor:pointer text:gray-40 hover:text:gray-90 transition:colors|0.2s p:4 r:4 hover:bg:gray-10">
-                                            <Trash2
-                                                width="18"
-                                                height="18"
-                                                stroke-width="2"
-                                            />
-                                        </button>
-                                    </div>
+                                <td class="text-secondary">{ticket.creador}</td>
+                                <td class="text-secondary">{ticket.fecha}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-link text-secondary p-1">
+                                        <SquarePen width="18" height="18" stroke-width="2" />
+                                    </button>
+                                    <button class="btn btn-sm btn-link text-secondary p-1">
+                                        <Trash2 width="18" height="18" stroke-width="2" />
+                                    </button>
                                 </td>
                             </tr>
                         ))
@@ -187,35 +148,28 @@ const tickets = [
 
         <!-- Pagination -->
         <div
-            class="px:24 py:16 border-t:1|solid|gray-10 d:flex ai:center jc:space-between"
+            class="card-footer bg-white d-flex align-items-center justify-content-between flex-wrap gap-2"
         >
-            <span class="text:13 text:gray-50"
-                >Mostrando <span class="font:semibold text:gray-80">1</span> a <span
-                    class="font:semibold text:gray-80">5</span
-                > de <span class="font:semibold text:gray-80">1,248</span> tickets</span
+            <span class="small text-muted"
+                >Mostrando <span class="fw-semibold text-dark">1</span> a <span
+                    class="fw-semibold text-dark">5</span
+                > de <span class="fw-semibold text-dark">1,248</span> tickets</span
             >
-            <div class="d:flex gap:4">
-                <button
-                    class="h:32 px:12 bg:white border:1|solid|gray-20 r:4 text:13 font:medium text:gray-40 cursor:not-allowed"
-                    >Anterior</button
-                >
-                <button
-                    class="h:32 w:32 bg:#0984e3 border:1|solid|#0984e3 r:4 text:13 font:medium color:white cursor:pointer"
-                    >1</button
-                >
-                <button
-                    class="h:32 w:32 bg:white border:1|solid|gray-20 r:4 text:13 font:medium text:gray-70 cursor:pointer hover:bg:gray-5"
-                    >2</button
-                >
-                <button
-                    class="h:32 w:32 bg:white border:1|solid|gray-20 r:4 text:13 font:medium text:gray-70 cursor:pointer hover:bg:gray-5"
-                    >3</button
-                >
-                <button
-                    class="h:32 px:12 bg:white border:1|solid|gray-20 r:4 text:13 font:medium text:gray-70 cursor:pointer hover:bg:gray-5"
-                    >Siguiente</button
-                >
-            </div>
+            <nav>
+                <ul class="pagination pagination-sm m-0">
+                    <li class="page-item disabled">
+                        <span class="page-link">Anterior</span>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link">1</span>
+                    </li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </DashboardLayout>

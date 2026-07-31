@@ -12,14 +12,14 @@ const { title = "Dashboard", pageTitle } = Astro.props;
 ---
 
 <Layout title={`${title} | Ticket Admin`}>
-    <div class="d:flex min-h:100vh w:100% bg:gray-5">
+    <div class="d-flex min-vh-100 w-100 bg-light">
         <Sidebar />
-        
-        <main class="flex:1 d:flex flex:col min-w:0">
+
+        <main class="flex-grow-1 d-flex flex-column" style="min-width: 0">
             <Header title={pageTitle || title} />
-            
-            <div class="p:24 flex:1 overflow-y:auto">
-                <div class="max-w:1200 mx:auto w:100%">
+
+            <div class="p-4 flex-grow-1 overflow-auto">
+                <div class="mx-auto w-100" style="max-width: 1200px">
                     <slot />
                 </div>
             </div>

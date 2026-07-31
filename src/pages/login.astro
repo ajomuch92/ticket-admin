@@ -27,34 +27,28 @@ if (Astro.cookies.has("session")) {
 ---
 
 <Layout title="Iniciar Sesión | Ticket Admin">
-    <div class="min-h:100vh d:flex ai:center jc:center bg:gray-5 px:20">
-        <div
-            class="w:full max-w:400 bg:white r:8 shadow:0|4|12|rgba(0,0,0,0.05) border:1|solid|gray-10 overflow:hidden"
-        >
-            <div class="p:32">
-                <div class="d:flex ai:center jc:center mb:24">
+    <div
+        class="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3"
+    >
+        <div class="card border-0 shadow-sm" style="max-width: 400px; width: 100%">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-center mb-4">
                     <Ticket
-                        class="mr:8 text:#0984e3"
+                        class="me-2 text-primary"
                         width="32"
                         height="32"
                         stroke-width="2"
                     />
-                    <span class="font:24 font:bold text:gray-90"
-                        >Ticket<span class="text:#0984e3">Admin</span></span
+                    <span class="fs-4 fw-bold"
+                        >Ticket<span class="text-primary">Admin</span></span
                     >
                 </div>
 
-                <h1
-                    class="text:18 font:semibold text:gray-80 text:center mb:24 m:0"
-                >
-                    Iniciar Sesión
-                </h1>
+                <h1 class="fs-5 fw-semibold text-center mb-4">Iniciar Sesión</h1>
 
-                <form method="POST" class="d:flex flex:col gap:16">
-                    <div class="d:flex flex:col gap:6">
-                        <label
-                            for="email"
-                            class="text:14 font:medium text:gray-70"
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-medium"
                             >Correo electrónico</label
                         >
                         <input
@@ -62,21 +56,21 @@ if (Astro.cookies.has("session")) {
                             id="email"
                             name="email"
                             required
+                            class="form-control"
                             placeholder="admin@ejemplo.com"
-                            class="h:40 px:12 r:4 border:1|solid|gray-30 bg:white outline:none:focus border:#0984e3:focus shadow:0|0|0|3|rgba(9,132,227,0.1):focus transition:all|0.2s text:14 text:gray-90"
                         />
                     </div>
 
-                    <div class="d:flex flex:col gap:6">
-                        <div class="d:flex ai:center jc:space-between">
-                            <label
-                                for="password"
-                                class="text:14 font:medium text:gray-70"
+                    <div class="mb-3">
+                        <div
+                            class="d-flex align-items-center justify-content-between"
+                        >
+                            <label for="password" class="form-label fw-medium"
                                 >Contraseña</label
                             >
                             <a
                                 href="#"
-                                class="text:12 text:#0984e3 text-decoration:none hover:text-decoration:underline"
+                                class="small text-primary text-decoration-none"
                                 >¿Olvidaste tu contraseña?</a
                             >
                         </div>
@@ -85,21 +79,18 @@ if (Astro.cookies.has("session")) {
                             id="password"
                             name="password"
                             required
+                            class="form-control"
                             placeholder="••••••••"
-                            class="h:40 px:12 r:4 border:1|solid|gray-30 bg:white outline:none:focus border:#0984e3:focus shadow:0|0|0|3|rgba(9,132,227,0.1):focus transition:all|0.2s text:14 text:gray-90"
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        class="mt:8 h:40 bg:#0984e3 color:white font:medium text:14 r:4 border:none cursor:pointer hover:bg:#0873c4 transition:bg|0.2s shadow:0|2|4|rgba(9,132,227,0.2)"
-                    >
+                    <button type="submit" class="btn btn-primary w-100 mt-2">
                         Entrar al sistema
                     </button>
                 </form>
             </div>
-            <div class="bg:gray-5 p:16 text:center border-t:1|solid|gray-10">
-                <span class="text:13 text:gray-50"
+            <div class="card-footer bg-light text-center border-top">
+                <span class="small text-muted"
                     >Para probar, ingresa cualquier correo y contraseña.</span
                 >
             </div>

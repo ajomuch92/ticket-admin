@@ -24,21 +24,20 @@ const menuItems = [
 ---
 
 <aside
-    class="w:250 bg:white border-r:1|solid|gray-20 d:flex flex:col h:100vh sticky top:0"
+    class="bg-white border-end d-flex flex-column vh-100 position-sticky top-0"
+    style="width: 250px"
 >
-    <div class="h:64 d:flex ai:center px:20 border-b:1|solid|gray-20">
-        <Ticket
-            class="mr:8 text:#0984e3"
-            width="24"
-            height="24"
-            stroke-width="2"
-        />
-        <span class="font:18 font:bold text:gray-90"
-            >Ticket<span class="text:#0984e3">Admin</span></span
+    <div
+        class="d-flex align-items-center px-3 border-bottom"
+        style="height: 64px"
+    >
+        <Ticket class="me-2 text-primary" width="24" height="24" stroke-width="2" />
+        <span class="fs-5 fw-bold"
+            >Ticket<span class="text-primary">Admin</span></span
         >
     </div>
 
-    <nav class="flex:1 overflow-y:auto py:16 px:12 d:flex flex:col gap:4">
+    <nav class="flex-grow-1 overflow-auto py-3 px-2 d-flex flex-column gap-1">
         {
             menuItems.map((item) => {
                 const isActive =
@@ -48,10 +47,10 @@ const menuItems = [
                 return (
                     <a
                         href={item.path}
-                        class={`d:flex ai:center px:12 py:10 r:8 text:14 font:medium text-decoration:none transition:all|0.2s ${isActive ? "bg:#0984e3|10 text:#0984e3" : "text:gray-60 hover:bg:gray-10 hover:text:gray-90"}`}
+                        class={`side-link d-flex align-items-center px-3 py-2 rounded text-decoration-none fw-medium ${isActive ? "active" : ""}`}
                     >
                         <item.Icon
-                            class={`mr:12 ${isActive ? "text:#0984e3" : "text:gray-50"}`}
+                            class="me-3"
                             width="20"
                             height="20"
                             stroke-width="2"
@@ -63,19 +62,35 @@ const menuItems = [
         }
     </nav>
 
-    <div class="p:16 border-t:1|solid|gray-20">
-        <div class="text:12 text:gray-50 font:medium mb:8 px:8">SISTEMA</div>
+    <div class="p-3 border-top">
+        <div class="text-uppercase small fw-semibold text-secondary mb-2 px-2">
+            Sistema
+        </div>
         <a
             href="/login?action=logout"
-            class="d:flex ai:center px:12 py:10 r:8 text:14 font:medium text-decoration:none text:gray-60 hover:bg:red-5 hover:text:red-60 transition:all|0.2s"
+            class="side-link side-link-danger d-flex align-items-center px-3 py-2 rounded text-decoration-none fw-medium"
         >
-            <LogOut
-                class="mr:12 text:gray-50"
-                width="20"
-                height="20"
-                stroke-width="2"
-            />
+            <LogOut class="me-3" width="20" height="20" stroke-width="2" />
             Cerrar sesión
         </a>
     </div>
 </aside>
+
+<style>
+    .side-link {
+        color: #6c757d;
+        transition: all 0.15s ease-in-out;
+    }
+    .side-link:hover {
+        background-color: #f1f3f5;
+        color: #212529;
+    }
+    .side-link.active {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    .side-link-danger:hover {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+</style>
