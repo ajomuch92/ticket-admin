@@ -1,0 +1,28 @@
+---
+import Layout from './Layout.astro';
+import Sidebar from '../components/Sidebar.astro';
+import Header from '../components/Header.astro';
+
+interface Props {
+    title?: string;
+    pageTitle?: string;
+}
+
+const { title = "Dashboard", pageTitle } = Astro.props;
+---
+
+<Layout title={`${title} | Ticket Admin`}>
+    <div class="d:flex min-h:100vh w:100% bg:gray-5">
+        <Sidebar />
+        
+        <main class="flex:1 d:flex flex:col min-w:0">
+            <Header title={pageTitle || title} />
+            
+            <div class="p:24 flex:1 overflow-y:auto">
+                <div class="max-w:1200 mx:auto w:100%">
+                    <slot />
+                </div>
+            </div>
+        </main>
+    </div>
+</Layout>
