@@ -8,5 +8,6 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   compressHTML: true,
   integrations: [vue()],
-  adapter: cloudflare()
+    adapter: cloudflare(),
+    output: 'server',
 });
