@@ -1,0 +1,86 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import { Plus, SquarePen } from "@lucide/astro";
+
+// Datos simulados
+const estados = [
+    { id: 1, nombre: "Abierto", orden: 1, color: "blue" },
+    { id: 2, nombre: "En Progreso", orden: 2, color: "orange" },
+    { id: 3, nombre: "Resuelto", orden: 3, color: "green" },
+    { id: 4, nombre: "Cerrado", orden: 4, color: "gray" },
+];
+---
+
+<DashboardLayout pageTitle="Gestión de Estados">
+    <div
+        class="bg:white r:8 shadow:0|2|8|rgba(0,0,0,0.04) border:1|solid|gray-10 overflow:hidden"
+    >
+        <div
+            class="px:24 py:16 border-b:1|solid|gray-10 d:flex ai:center jc:flex-end"
+        >
+            <button
+                class="h:36 px:16 bg:#0984e3 color:white font:medium text:13 r:4 border:none cursor:pointer hover:bg:#0873c4 transition:bg|0.2s shadow:0|2|4|rgba(9,132,227,0.2) d:flex ai:center gap:8"
+            >
+                <Plus width="16" height="16" stroke-width="2" />
+                Nuevo Estado
+            </button>
+        </div>
+
+        <div class="overflow-x:auto">
+            <table class="w:100% border-collapse text:left">
+                <thead>
+                    <tr class="bg:gray-5 border-b:1|solid|gray-20">
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:60"
+                            >ID</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1"
+                            >Estado</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:100 text:center"
+                            >Orden</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:80 text:right"
+                            >Acciones</th
+                        >
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        estados.map((estado, index) => (
+                            <tr
+                                class={`border-b:1|solid|gray-10 hover:bg:gray-5 transition:bg|0.2s ${index === estados.length - 1 ? "border-b:none" : ""}`}
+                            >
+                                <td class="py:16 px:24 text:13 font:medium text:gray-60">
+                                    #{estado.id}
+                                </td>
+                                <td class="py:16 px:24">
+                                    <span
+                                        class={`inline-flex ai:center px:8 py:4 r:4 text:11 font:semibold bg:${estado.color}-10 color:white`}
+                                    >
+                                        {estado.nombre}
+                                    </span>
+                                </td>
+                                <td class="py:16 px:24 text:14 font:semibold text:gray-70 text:center">
+                                    {estado.orden}
+                                </td>
+                                <td class="py:16 px:24 text:right">
+                                    <button class="bg:transparent border:none cursor:pointer text:gray-40 hover:text:gray-90 transition:colors|0.2s p:4 r:4 hover:bg:gray-10">
+                                        <SquarePen
+                                            width="18"
+                                            height="18"
+                                            stroke-width="2"
+                                        />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</DashboardLayout>

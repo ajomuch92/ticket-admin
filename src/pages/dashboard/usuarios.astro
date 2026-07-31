@@ -1,0 +1,156 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import { Search, Plus, SquarePen } from "@lucide/astro";
+
+// Datos simulados
+const usuarios = [
+    {
+        id: 1,
+        nombre: "Admin User",
+        email: "admin@ejemplo.com",
+        rol: "Administrador",
+        activo: true,
+        fecha: "2023-01-15",
+    },
+    {
+        id: 2,
+        nombre: "Juan Pérez",
+        email: "juan@ejemplo.com",
+        rol: "Soporte",
+        activo: true,
+        fecha: "2023-02-20",
+    },
+    {
+        id: 3,
+        nombre: "María García",
+        email: "maria@ejemplo.com",
+        rol: "Cliente",
+        activo: false,
+        fecha: "2023-03-10",
+    },
+];
+---
+
+<DashboardLayout pageTitle="Gestión de Usuarios">
+    <div
+        class="bg:white r:8 shadow:0|2|8|rgba(0,0,0,0.04) border:1|solid|gray-10 overflow:hidden"
+    >
+        <!-- Toolbar -->
+        <div
+            class="px:24 py:16 border-b:1|solid|gray-10 d:flex ai:center jc:space-between flex:wrap gap:16"
+        >
+            <div class="relative">
+                <Search
+                    class="absolute left:12 top:50% translate-y:-50% text:gray-40"
+                    width="16"
+                    height="16"
+                    stroke-width="2"
+                />
+                <input
+                    type="text"
+                    placeholder="Buscar usuarios..."
+                    class="h:36 pl:36 pr:12 r:4 border:1|solid|gray-30 bg:white outline:none:focus border:#0984e3:focus shadow:0|0|0|3|rgba(9,132,227,0.1):focus transition:all|0.2s text:13 w:250"
+                />
+            </div>
+
+            <button
+                class="h:36 px:16 bg:#0984e3 color:white font:medium text:13 r:4 border:none cursor:pointer hover:bg:#0873c4 transition:bg|0.2s shadow:0|2|4|rgba(9,132,227,0.2) d:flex ai:center gap:8"
+            >
+                <Plus width="16" height="16" stroke-width="2" />
+                Nuevo Usuario
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x:auto">
+            <table class="w:100% border-collapse text:left">
+                <thead>
+                    <tr class="bg:gray-5 border-b:1|solid|gray-20">
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:60"
+                            >ID</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1"
+                            >Usuario</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1"
+                            >Rol</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1"
+                            >Estado</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1"
+                            >Registro</th
+                        >
+                        <th
+                            class="py:12 px:24 text:12 font:semibold text:gray-50 uppercase tracking:1 w:80 text:right"
+                            >Acciones</th
+                        >
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        usuarios.map((usuario, index) => (
+                            <tr
+                                class={`border-b:1|solid|gray-10 hover:bg:gray-5 transition:bg|0.2s ${index === usuarios.length - 1 ? "border-b:none" : ""}`}
+                            >
+                                <td class="py:16 px:24 text:13 font:medium text:gray-60">
+                                    #{usuario.id}
+                                </td>
+                                <td class="py:16 px:24">
+                                    <div class="d:flex ai:center gap:12">
+                                        <div class="w:36 h:36 bg:#0984e3|10 text:#0984e3 d:flex ai:center jc:center r:8 font:bold text:14">
+                                            {usuario.nombre
+                                                .substring(0, 2)
+                                                .toUpperCase()}
+                                        </div>
+                                        <div class="d:flex flex:col">
+                                            <span class="text:14 font:medium text:gray-90">
+                                                {usuario.nombre}
+                                            </span>
+                                            <span class="text:12 text:gray-50 mt:2">
+                                                {usuario.email}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py:16 px:24 text:13 text:gray-70">
+                                    {usuario.rol}
+                                </td>
+                                <td class="py:16 px:24">
+                                    {usuario.activo ? (
+                                        <span class="inline-flex ai:center px:8 py:4 r:4 text:11 font:semibold bg:green-10 color:white">
+                                            Activo
+                                        </span>
+                                    ) : (
+                                        <span class="inline-flex ai:center px:8 py:4 r:4 text:11 font:semibold bg:gray-20 color:white">
+                                            Inactivo
+                                        </span>
+                                    )}
+                                </td>
+                                <td class="py:16 px:24 text:13 text:gray-60">
+                                    {usuario.fecha}
+                                </td>
+                                <td class="py:16 px:24 text:right">
+                                    <div class="d:flex ai:center jc:flex-end gap:8">
+                                        <button class="bg:transparent border:none cursor:pointer text:gray-40 hover:text:gray-90 transition:colors|0.2s p:4 r:4 hover:bg:gray-10">
+                                            <SquarePen
+                                                width="18"
+                                                height="18"
+                                                stroke-width="2"
+                                            />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</DashboardLayout>

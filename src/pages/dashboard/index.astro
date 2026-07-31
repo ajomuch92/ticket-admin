@@ -1,0 +1,176 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import { Ticket, Clock, CircleCheck, Users } from "@lucide/astro";
+
+// Datos de ejemplo para las tarjetas de resumen
+const summaryCards = [
+    {
+        title: "Tickets Totales",
+        value: "1,248",
+        Icon: Ticket,
+        color: "#0984e3",
+    },
+    { title: "Tickets Abiertos", value: "342", Icon: Clock, color: "#e17055" },
+    {
+        title: "Tickets Resueltos",
+        value: "856",
+        Icon: CircleCheck,
+        color: "#00b894",
+    },
+    { title: "Usuarios Activos", value: "45", Icon: Users, color: "#6c5ce7" },
+];
+---
+
+<DashboardLayout pageTitle="Resumen General">
+    <div class="grid cols:4@md cols:2@sm cols:1 gap:24 mb:32">
+        {
+            summaryCards.map((card) => (
+                <div class="bg:white p:24 r:8 shadow:0|2|8|rgba(0,0,0,0.04) border:1|solid|gray-10 d:flex ai:center jc:space-between">
+                    <div>
+                        <h3 class="text:14 font:medium text:gray-50 m:0 mb:8">
+                            {card.title}
+                        </h3>
+                        <p class="text:28 font:bold text:gray-90 m:0">
+                            {card.value}
+                        </p>
+                    </div>
+                    <div
+                        class="w:48 h:48 r:8 d:flex ai:center jc:center"
+                        style={`background-color: ${card.color}15; color: ${card.color};`}
+                    >
+                        <card.Icon width="24" height="24" stroke-width="2" />
+                    </div>
+                </div>
+            ))
+        }
+    </div>
+
+    <div class="grid cols:2@lg cols:1 gap:24">
+        <!-- Panel 1: Actividad Reciente -->
+        <div
+            class="bg:white r:8 shadow:0|2|8|rgba(0,0,0,0.04) border:1|solid|gray-10 overflow:hidden"
+        >
+            <div
+                class="px:24 py:16 border-b:1|solid|gray-10 d:flex ai:center jc:space-between"
+            >
+                <h2 class="text:16 font:semibold text:gray-80 m:0">
+                    Actividad Reciente
+                </h2>
+                <a
+                    href="/dashboard/tickets"
+                    class="text:13 text:#0984e3 text-decoration:none font:medium hover:text-decoration:underline"
+                    >Ver todos</a
+                >
+            </div>
+            <div class="p:0">
+                {
+                    [1, 2, 3, 4, 5].map((item, i) => (
+                        <div
+                            class={`d:flex ai:center px:24 py:16 ${i !== 4 ? "border-b:1|solid|gray-5" : ""}`}
+                        >
+                            <div class="w:32 h:32 bg:gray-10 r:8 d:flex ai:center jc:center mr:16">
+                                <span class="text:12 font:bold text:gray-60">
+                                    US
+                                </span>
+                            </div>
+                            <div class="flex:1 min-w:0">
+                                <p class="text:14 font:medium text:gray-80 m:0 text:truncate">
+                                    Usuario reportó un problema de conexión
+                                </p>
+                                <p class="text:12 text:gray-50 m:0 mt:4">
+                                    Ticket #104{i} • Hace {i * 10 + 5} minutos
+                                </p>
+                            </div>
+                            <div class="px:8 py:4 bg:orange-10 color:white text:11 font:semibold r:4">
+                                En Progreso
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+
+        <!-- Panel 2: Tickets por Prioridad -->
+        <div
+            class="bg:white r:8 shadow:0|2|8|rgba(0,0,0,0.04) border:1|solid|gray-10 overflow:hidden"
+        >
+            <div class="px:24 py:16 border-b:1|solid|gray-10">
+                <h2 class="text:16 font:semibold text:gray-80 m:0">
+                    Tickets por Prioridad
+                </h2>
+            </div>
+            <div class="p:24">
+                <div class="d:flex flex:col gap:16">
+                    <div>
+                        <div class="d:flex jc:space-between mb:8">
+                            <span class="text:14 text:gray-70 font:medium"
+                                >Crítica</span
+                            >
+                            <span class="text:14 text:gray-90 font:semibold"
+                                >24</span
+                            >
+                        </div>
+                        <div class="w:100% h:8 bg:gray-10 r:4 overflow:hidden">
+                            <div
+                                class="h:100% bg:red-50 r:4"
+                                style="width: 15%"
+                            >
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d:flex jc:space-between mb:8">
+                            <span class="text:14 text:gray-70 font:medium"
+                                >Alta</span
+                            >
+                            <span class="text:14 text:gray-90 font:semibold"
+                                >86</span
+                            >
+                        </div>
+                        <div class="w:100% h:8 bg:gray-10 r:4 overflow:hidden">
+                            <div
+                                class="h:100% bg:orange-50 r:4"
+                                style="width: 45%"
+                            >
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d:flex jc:space-between mb:8">
+                            <span class="text:14 text:gray-70 font:medium"
+                                >Media</span
+                            >
+                            <span class="text:14 text:gray-90 font:semibold"
+                                >142</span
+                            >
+                        </div>
+                        <div class="w:100% h:8 bg:gray-10 r:4 overflow:hidden">
+                            <div
+                                class="h:100% bg:blue-50 r:4"
+                                style="width: 75%"
+                            >
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d:flex jc:space-between mb:8">
+                            <span class="text:14 text:gray-70 font:medium"
+                                >Baja</span
+                            >
+                            <span class="text:14 text:gray-90 font:semibold"
+                                >90</span
+                            >
+                        </div>
+                        <div class="w:100% h:8 bg:gray-10 r:4 overflow:hidden">
+                            <div
+                                class="h:100% bg:green-50 r:4"
+                                style="width: 50%"
+                            >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
