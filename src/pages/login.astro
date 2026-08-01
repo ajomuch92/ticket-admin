@@ -1,8 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { Ticket } from "@lucide/astro";
+import { Ticket, Eye, EyeOff } from "@lucide/astro";
+import { usuariosRepository } from "../data/repositories";
+import { verifyPassword } from "../data/password";
 
-// Lógica de sesión simulada
 const action = Astro.url.searchParams.get("action");
 
 if (action === "logout") {
@@ -10,15 +11,23 @@ if (action === "logout") {
     return Astro.redirect("/login");
 }
 
+let loginError = "";
+
 if (Astro.request.method === "POST") {
     const data = await Astro.request.formData();
-    const email = data.get("email");
-    const password = data.get("password");
+    const email = String(data.get("email") ?? "").trim();
+    const password = String(data.get("password") ?? "");
 
-    if (email && password) {
+    const user = email ? await usuariosRepository.findByEmail(email) : null;
+    if (
+        user &&
+        user.activo &&
+        (await verifyPassword(password, user.passwordHash))
+    ) {
         Astro.cookies.set("session", "true", { path: "/" });
         return Astro.redirect("/dashboard");
     }
+    loginError = "Correo o contraseña incorrectos.";
 }
 
 if (Astro.cookies.has("session")) {
@@ -30,9 +39,14 @@ if (Astro.cookies.has("session")) {
     <div
         class="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3"
     >
-        <div class="card border-0 shadow-sm" style="max-width: 400px; width: 100%">
+        <div
+            class="card border-0 shadow-sm"
+            style="max-width: 400px; width: 100%"
+        >
             <div class="card-body p-4">
-                <div class="d-flex align-items-center justify-content-center mb-4">
+                <div
+                    class="d-flex align-items-center justify-content-center mb-4"
+                >
                     <Ticket
                         class="me-2 text-primary"
                         width="32"
@@ -44,7 +58,17 @@ if (Astro.cookies.has("session")) {
                     >
                 </div>
 
-                <h1 class="fs-5 fw-semibold text-center mb-4">Iniciar Sesión</h1>
+                <h1 class="fs-5 fw-semibold text-center mb-4">
+                    Iniciar Sesión
+                </h1>
+
+                {
+                    loginError && (
+                        <div class="alert alert-danger py-2" role="alert">
+                            {loginError}
+                        </div>
+                    )
+                }
 
                 <form method="POST">
                     <div class="mb-3">
@@ -69,19 +93,41 @@ if (Astro.cookies.has("session")) {
                                 >Contraseña</label
                             >
                             <a
-                                href="#"
+                                href="/recuperar"
                                 class="small text-primary text-decoration-none"
                                 >¿Olvidaste tu contraseña?</a
                             >
                         </div>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            required
-                            class="form-control"
-                            placeholder="••••••••"
-                        />
+                        <div class="input-group">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                required
+                                class="form-control"
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                id="togglePassword"
+                                class="btn btn-outline-secondary d-flex align-items-center"
+                                aria-label="Mostrar contraseña"
+                            >
+                                <Eye
+                                    id="eyeOpen"
+                                    width="18"
+                                    height="18"
+                                    stroke-width="2"
+                                />
+                                <EyeOff
+                                    id="eyeOff"
+                                    width="18"
+                                    height="18"
+                                    stroke-width="2"
+                                    style="display: none"
+                                />
+                            </button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 mt-2">
@@ -97,3 +143,22 @@ if (Astro.cookies.has("session")) {
         </div>
     </div>
 </Layout>
+
+<script>
+    const toggle = document.getElementById("togglePassword");
+    const input = document.getElementById("password");
+    const eyeOpen = document.getElementById("eyeOpen");
+    const eyeOff = document.getElementById("eyeOff");
+
+    toggle?.addEventListener("click", () => {
+        if (!(input instanceof HTMLInputElement) || !eyeOpen || !eyeOff) return;
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        eyeOpen.style.display = show ? "none" : "";
+        eyeOff.style.display = show ? "" : "none";
+        toggle.setAttribute(
+            "aria-label",
+            show ? "Ocultar contraseña" : "Mostrar contraseña",
+        );
+    });
+</script>
