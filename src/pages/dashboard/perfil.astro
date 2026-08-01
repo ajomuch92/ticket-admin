@@ -2,6 +2,7 @@
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
 import { usuariosRepository } from "../../data/repositories";
 import { hashPassword } from "../../data/password";
+import { Lock } from "@lucide/astro";
 
 const userId = Number(Astro.cookies.get("session")?.value);
 if (!userId) return Astro.redirect("/login");
@@ -50,14 +51,24 @@ if (Astro.request.method === "POST") {
             <form method="POST">
                 <div class="mb-3">
                     <label for="email" class="form-label fw-medium">Correo</label>
-                    <input
-                        type="email"
-                        id="email"
-                        class="form-control"
-                        value={user.email}
-                        disabled
-                    />
-                    <div class="form-text">El correo no se puede cambiar.</div>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <Lock width="16" height="16" stroke-width="2" />
+                        </span>
+                        <input
+                            type="email"
+                            id="email"
+                            class="form-control"
+                            value={user.email}
+                            disabled
+                            readonly
+                            aria-describedby="emailHint"
+                        />
+                    </div>
+                    <div id="emailHint" class="form-text d-flex align-items-center gap-1">
+                        <Lock width="12" height="12" stroke-width="2" />
+                        El correo es tu identificador y no se puede modificar.
+                    </div>
                 </div>
 
                 <div class="mb-3">
