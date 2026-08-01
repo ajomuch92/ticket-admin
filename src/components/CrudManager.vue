@@ -1,7 +1,11 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { actions } from "astro:actions";
-import { showToast } from "../lib/toast";
+import { randomString } from "complete-js-utils";
+import { showToast, showCopyToast } from "../lib/toast";
+
+const PW_CHARS =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
 const props = defineProps({
     /** Clave del namespace en `actions` (ej: "roles", "tickets"). */
@@ -13,9 +17,16 @@ const props = defineProps({
     initialItems: { type: Array, default: () => [] },
     /** Columnas: { key, label, align? }. key admite ruta anidada "estado.nombre". */
     columns: { type: Array, required: true },
-    /** Campos del formulario: { key, label, type, options?, required? }. */
+    /** Campos del formulario: { key, label, type, options?, required?, lockOnEdit?, hideOnEdit? }. */
     fields: { type: Array, required: true },
     idKey: { type: String, default: "id" },
+    /**
+     * Acción extra por fila (opcional):
+     * { label, actionName, confirm?, copyKey?, toastLabel? }.
+     * Llama actions[entity][actionName]({ id }); si devuelve copyKey, lo muestra
+     * en un toast copiable.
+     */
+    rowAction: { type: Object, default: null },
 });
 
 const items = ref([...props.initialItems]);
@@ -28,6 +39,40 @@ const saving = ref(false);
 const dialog = ref(null);
 
 const ns = () => actions[props.entity];
+
+// Campos visibles: oculta los hideOnEdit cuando se está editando.
+const visibleFields = computed(() =>
+    props.fields.filter((fl) => !(editing.value && fl.hideOnEdit)),
+);
+
+// Modal de confirmación (reemplaza confirm() nativo). askConfirm devuelve Promise.
+const confirmState = ref({ show: false, message: "", resolve: null });
+const confirmDialog = ref(null);
+
+function askConfirm(message) {
+    return new Promise((resolve) => {
+        confirmState.value = { show: true, message, resolve };
+    });
+}
+function resolveConfirm(value) {
+    confirmState.value.resolve?.(value);
+    confirmState.value = { show: false, message: "", resolve: null };
+}
+
+watch(
+    () => confirmState.value.show,
+    (open) => {
+        const d = confirmDialog.value;
+        if (!d) return;
+        if (open && !d.open) d.showModal();
+        else if (!open && d.open) d.close();
+    },
+);
+
+function generatePassword(key) {
+    form.value[key] = randomString(14, PW_CHARS);
+    revealed.value[key] = true; // mostrar para que el admin la vea/copie
+}
 
 const getVal = (item, key) =>
     key.split(".").reduce((o, k) => (o == null ? o : o[k]), item);
@@ -74,6 +119,8 @@ function openEdit(item) {
 function buildPayload() {
     const p = {};
     for (const fl of props.fields) {
+        // Campos bloqueados u ocultos en edición no se envían (ej. email, password).
+        if (editing.value && (fl.lockOnEdit || fl.hideOnEdit)) continue;
         let v = form.value[fl.key];
         if (fl.type === "number" || fl.type === "select-number") {
             v = v === "" || v == null ? undefined : Number(v);
@@ -111,7 +158,10 @@ async function save() {
 }
 
 async function remove(item) {
-    if (!confirm(`¿Eliminar ${props.titular.toLowerCase()} #${item[props.idKey]}?`)) return;
+    const ok = await askConfirm(
+        `¿Eliminar ${props.titular.toLowerCase()} #${item[props.idKey]}?`,
+    );
+    if (!ok) return;
     const { error: err } = await ns().delete({ [props.idKey]: item[props.idKey] });
     if (err) {
         showToast(err.message || "Error al eliminar", "danger");
@@ -119,6 +169,21 @@ async function remove(item) {
     }
     await reload();
     showToast(`${props.titular} eliminado`, "success");
+}
+
+async function runRowAction(item) {
+    const cfg = props.rowAction;
+    if (cfg.confirm && !(await askConfirm(cfg.confirm))) return;
+    const { data, error: err } = await ns()[cfg.actionName]({
+        [props.idKey]: item[props.idKey],
+    });
+    if (err) {
+        showToast(err.message || "Error", "danger");
+        return;
+    }
+    const value = cfg.copyKey ? data?.[cfg.copyKey] : undefined;
+    if (value) showCopyToast(cfg.toastLabel || "Resultado:", String(value));
+    else showToast(cfg.toastLabel || "Listo", "success");
 }
 </script>
 
@@ -167,6 +232,13 @@ async function remove(item) {
                         </td>
                         <td class="text-end text-nowrap">
                             <button
+                                v-if="rowAction"
+                                class="btn btn-sm btn-link text-primary p-1"
+                                @click="runRowAction(item)"
+                            >
+                                {{ rowAction.label }}
+                            </button>
+                            <button
                                 class="btn btn-sm btn-link text-secondary p-1"
                                 @click="openEdit(item)"
                             >
@@ -202,7 +274,7 @@ async function remove(item) {
             <div class="card-body">
                 <div v-if="error" class="alert alert-danger py-2">{{ error }}</div>
                 <form @submit.prevent="save">
-                    <div v-for="fl in fields" :key="fl.key" class="mb-3">
+                    <div v-for="fl in visibleFields" :key="fl.key" class="mb-3">
                         <template v-if="fl.type === 'checkbox'">
                             <div class="form-check">
                                 <input
@@ -280,6 +352,14 @@ async function remove(item) {
                                         <line x1="2" x2="22" y1="2" y2="22" />
                                     </svg>
                                 </button>
+                                <button
+                                    v-if="fl.generate"
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    @click="generatePassword(fl.key)"
+                                >
+                                    Generar
+                                </button>
                             </div>
                             <input
                                 v-else
@@ -287,7 +367,15 @@ async function remove(item) {
                                 :type="fl.type === 'number' ? 'number' : fl.type === 'date' ? 'date' : 'text'"
                                 class="form-control"
                                 :required="fl.required"
+                                :disabled="editing && fl.lockOnEdit"
+                                :readonly="editing && fl.lockOnEdit"
                             />
+                            <div
+                                v-if="editing && fl.lockOnEdit"
+                                class="form-text"
+                            >
+                                No se puede modificar.
+                            </div>
                         </template>
                     </div>
                     <div class="d-flex justify-content-end gap-2">
@@ -299,6 +387,36 @@ async function remove(item) {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal de confirmación (reemplaza confirm() nativo) -->
+    <dialog
+        ref="confirmDialog"
+        class="crud-dialog"
+        @click="(e) => e.target === confirmDialog && resolveConfirm(false)"
+        @close="resolveConfirm(false)"
+    >
+        <div class="card border-0">
+            <div class="card-body">
+                <p class="mb-3">{{ confirmState.message }}</p>
+                <div class="d-flex justify-content-end gap-2">
+                    <button
+                        type="button"
+                        class="btn btn-light"
+                        @click="resolveConfirm(false)"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        @click="resolveConfirm(true)"
+                    >
+                        Confirmar
+                    </button>
+                </div>
             </div>
         </div>
     </dialog>

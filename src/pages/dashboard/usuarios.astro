@@ -21,13 +21,23 @@ const { data: usuarios } = await Astro.callAction(actions.usuarios.list, {});
         ]}
         fields={[
             { key: "nombre", label: "Nombre", type: "text", required: true },
-            { key: "email", label: "Email", type: "text", required: true },
+            { key: "email", label: "Email", type: "text", required: true, lockOnEdit: true },
             {
                 key: "password",
-                label: "Contraseña (dejar vacío para no cambiar)",
+                label: "Contraseña",
                 type: "password",
+                required: true,
+                hideOnEdit: true,
+                generate: true,
             },
             { key: "activo", label: "Usuario activo", type: "checkbox" },
         ]}
+        rowAction={{
+            label: "Reset clave",
+            actionName: "resetPassword",
+            confirm: "¿Reestablecer la contraseña de este usuario a una aleatoria?",
+            copyKey: "password",
+            toastLabel: "Nueva contraseña (cópiala, no se vuelve a mostrar):",
+        }}
     />
 </DashboardLayout>

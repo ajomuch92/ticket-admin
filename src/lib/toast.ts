@@ -53,6 +53,71 @@ export function showToast(
     if (duration > 0) setTimeout(dismiss, duration);
 }
 
+/**
+ * Toast con un valor copiable (botón "Copiar"). Se auto-cierra tras `duration`ms
+ * (o con la X). Útil para mostrar una contraseña generada una sola vez.
+ */
+export function showCopyToast(
+    label: string,
+    value: string,
+    duration = 10000,
+): void {
+    const el = document.createElement("div");
+    el.className = "toast show bg-body border";
+    el.setAttribute("role", "alert");
+    el.style.transition = "opacity .2s ease";
+    el.style.opacity = "1";
+
+    const bodyWrap = document.createElement("div");
+    bodyWrap.className = "toast-body";
+
+    const text = document.createElement("div");
+    text.className = "mb-2";
+    text.textContent = label;
+
+    const group = document.createElement("div");
+    group.className = "input-group input-group-sm";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "form-control";
+    input.readOnly = true;
+    input.value = value;
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "btn btn-primary";
+    copyBtn.textContent = "Copiar";
+    copyBtn.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(value);
+            copyBtn.textContent = "¡Copiado!";
+        } catch {
+            input.select(); // fallback: selecciona para copiar manual
+            copyBtn.textContent = "Copia manual";
+        }
+    });
+
+    const dismiss = () => {
+        el.style.opacity = "0";
+        setTimeout(() => el.remove(), 200);
+    };
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "btn-close position-absolute top-0 end-0 m-2";
+    close.setAttribute("aria-label", "Cerrar");
+    close.addEventListener("click", dismiss);
+
+    group.append(input, copyBtn);
+    bodyWrap.append(text, group);
+    el.append(bodyWrap, close);
+    el.style.position = "relative";
+    getContainer().append(el);
+
+    if (duration > 0) setTimeout(dismiss, duration);
+}
+
 if (typeof window !== "undefined") {
     (window as unknown as { toast: typeof showToast }).toast = showToast;
 }

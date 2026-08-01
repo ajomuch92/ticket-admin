@@ -1,6 +1,7 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro:schema";
 import { count, eq, desc } from "drizzle-orm";
+import { randomString } from "complete-js-utils";
 import { hashPassword } from "../data/password.js";
 import { db } from "../data/db.js";
 import { tickets, estados, prioridades, usuarios } from "../data/schema/index.js";
@@ -167,6 +168,22 @@ export const server = {
                 const usuario = await usuariosRepository.delete(id);
                 if (!usuario) throw notFound("Usuario");
                 return usuario;
+            },
+        }),
+        // Genera una contraseña aleatoria, la asigna al usuario y la devuelve
+        // (en claro, una sola vez) para mostrarla al admin.
+        resetPassword: defineAction({
+            input: idInput,
+            handler: async ({ id }) => {
+                const password = randomString(
+                    14,
+                    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789",
+                );
+                const usuario = await usuariosRepository.update(id, {
+                    passwordHash: await hashPassword(password),
+                });
+                if (!usuario) throw notFound("Usuario");
+                return { password };
             },
         }),
     },
