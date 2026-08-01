@@ -2,6 +2,7 @@
 import Layout from './Layout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import Header from '../components/Header.astro';
+import { usuariosRepository } from '../data/repositories';
 
 interface Props {
     title?: string;
@@ -9,6 +10,9 @@ interface Props {
 }
 
 const { title = "Dashboard", pageTitle } = Astro.props;
+
+const userId = Number(Astro.cookies.get("session")?.value);
+const currentUser = userId ? await usuariosRepository.findById(userId) : null;
 ---
 
 <Layout title={`${title} | Ticket Admin`}>
@@ -16,7 +20,11 @@ const { title = "Dashboard", pageTitle } = Astro.props;
         <Sidebar />
 
         <main class="flex-grow-1 d-flex flex-column" style="min-width: 0">
-            <Header title={pageTitle || title} />
+            <Header
+                title={pageTitle || title}
+                nombre={currentUser?.nombre}
+                email={currentUser?.email}
+            />
 
             <div class="p-4 flex-grow-1 overflow-auto">
                 <div class="mx-auto w-100" style="max-width: 1200px">

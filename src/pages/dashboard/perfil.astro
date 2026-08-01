@@ -1,0 +1,114 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import { usuariosRepository } from "../../data/repositories";
+import { hashPassword } from "../../data/password";
+
+const userId = Number(Astro.cookies.get("session")?.value);
+if (!userId) return Astro.redirect("/login");
+
+const user = await usuariosRepository.findById(userId);
+if (!user) return Astro.redirect("/login");
+
+let msg = "";
+let msgType: "success" | "danger" = "success";
+let nombreVal = user.nombre;
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const nombre = String(data.get("nombre") ?? "").trim();
+    const password = String(data.get("password") ?? "");
+    const password2 = String(data.get("password2") ?? "");
+    nombreVal = nombre;
+
+    if (!nombre) {
+        msg = "El nombre es requerido.";
+        msgType = "danger";
+    } else if (password && password.length < 6) {
+        msg = "La contraseña debe tener al menos 6 caracteres.";
+        msgType = "danger";
+    } else if (password && password !== password2) {
+        msg = "Las contraseñas no coinciden.";
+        msgType = "danger";
+    } else {
+        const patch: Record<string, unknown> = { nombre };
+        if (password) patch.passwordHash = await hashPassword(password);
+        await usuariosRepository.update(userId, patch);
+        msg = "Perfil actualizado.";
+        msgType = "success";
+    }
+}
+---
+
+<DashboardLayout pageTitle="Mi Perfil">
+    <div class="card" style="max-width: 560px">
+        <div class="card-header bg-body">
+            <h2 class="fs-6 fw-semibold m-0">Datos de la cuenta</h2>
+        </div>
+        <div class="card-body">
+            {msg && <div class={`alert alert-${msgType} py-2`}>{msg}</div>}
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-medium">Correo</label>
+                    <input
+                        type="email"
+                        id="email"
+                        class="form-control"
+                        value={user.email}
+                        disabled
+                    />
+                    <div class="form-text">El correo no se puede cambiar.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="nombre" class="form-label fw-medium">Nombre</label>
+                    <input
+                        type="text"
+                        id="nombre"
+                        name="nombre"
+                        required
+                        class="form-control"
+                        value={nombreVal}
+                    />
+                </div>
+
+                <hr />
+                <p class="small text-muted">
+                    Deja los campos de contraseña vacíos para no cambiarla.
+                </p>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-medium"
+                        >Nueva contraseña</label
+                    >
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        minlength="6"
+                        class="form-control"
+                        placeholder="••••••••"
+                    />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password2" class="form-label fw-medium"
+                        >Confirmar contraseña</label
+                    >
+                    <input
+                        type="password"
+                        id="password2"
+                        name="password2"
+                        minlength="6"
+                        class="form-control"
+                        placeholder="••••••••"
+                    />
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Guardar cambios
+                </button>
+            </form>
+        </div>
+    </div>
+</DashboardLayout>

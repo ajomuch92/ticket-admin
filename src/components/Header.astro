@@ -1,11 +1,14 @@
 ---
-import { ChevronDown, Sun, Moon } from "@lucide/astro";
+import { ChevronDown, Sun, Moon, User, LogOut } from "@lucide/astro";
 
 interface Props {
     title?: string;
+    nombre?: string;
+    email?: string;
 }
 
-const { title = "Dashboard" } = Astro.props;
+const { title = "Dashboard", nombre = "Usuario", email = "" } = Astro.props;
+const initials = nombre.trim().substring(0, 2).toUpperCase() || "US";
 ---
 
 <header
@@ -32,30 +35,66 @@ const { title = "Dashboard" } = Astro.props;
             />
         </button>
 
-        <div
-            class="d-flex align-items-center gap-2 p-1 pe-3 rounded"
-            style="cursor: pointer"
-        >
-            <div
-                class="d-flex align-items-center justify-content-center rounded fw-bold text-primary"
-                style="width: 36px; height: 36px; font-size: 14px; background-color: rgba(13, 110, 253, 0.1)"
+        <div class="dropdown">
+            <button
+                type="button"
+                data-dropdown-toggle
+                class="btn d-flex align-items-center gap-2 p-1 pe-3 rounded border-0"
             >
-                AD
-            </div>
-            <div class="d-flex flex-column">
-                <span class="fw-semibold lh-1" style="font-size: 14px"
-                    >Admin User</span
+                <div
+                    class="d-flex align-items-center justify-content-center rounded fw-bold text-primary"
+                    style="width: 36px; height: 36px; font-size: 14px; background-color: rgba(13, 110, 253, 0.1)"
                 >
-                <span class="text-muted lh-1 mt-1" style="font-size: 12px"
-                    >admin@ejemplo.com</span
-                >
-            </div>
-            <ChevronDown
-                class="text-muted"
-                width="16"
-                height="16"
-                stroke-width="2"
-            />
+                    {initials}
+                </div>
+                <div class="d-flex flex-column text-start">
+                    <span class="fw-semibold lh-1" style="font-size: 14px"
+                        >{nombre}</span
+                    >
+                    <span class="text-muted lh-1 mt-1" style="font-size: 12px"
+                        >{email}</span
+                    >
+                </div>
+                <ChevronDown
+                    class="text-muted"
+                    width="16"
+                    height="16"
+                    stroke-width="2"
+                />
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a
+                        class="dropdown-item d-flex align-items-center gap-2"
+                        href="/dashboard/perfil"
+                    >
+                        <User width="16" height="16" stroke-width="2" />
+                        Perfil
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                    <a
+                        class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                        href="/login?action=logout"
+                    >
+                        <LogOut width="16" height="16" stroke-width="2" />
+                        Cerrar sesión
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
 </header>
+
+<script>
+    // Dropdown sin Bootstrap JS: toggle de .show + cierre al clicar fuera.
+    const toggle = document.querySelector("[data-dropdown-toggle]");
+    const menu = toggle?.nextElementSibling;
+    toggle?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu?.classList.toggle("show");
+    });
+    document.addEventListener("click", () => menu?.classList.remove("show"));
+</script>

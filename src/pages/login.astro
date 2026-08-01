@@ -24,13 +24,20 @@ if (Astro.request.method === "POST") {
         user.activo &&
         (await verifyPassword(password, user.passwordHash))
     ) {
-        Astro.cookies.set("session", "true", { path: "/" });
+        // La sesión guarda el id del usuario (para /perfil, header, etc.).
+        Astro.cookies.set("session", String(user.id), {
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+        });
         return Astro.redirect("/dashboard");
     }
     loginError = "Correo o contraseña incorrectos.";
 }
 
-if (Astro.cookies.has("session")) {
+// Solo redirige si la sesión es válida (id numérico); si no, muestra el login.
+const sessionVal = Astro.cookies.get("session")?.value;
+if (sessionVal && /^\d+$/.test(sessionVal)) {
     return Astro.redirect("/dashboard");
 }
 ---
