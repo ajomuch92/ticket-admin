@@ -1,12 +1,13 @@
 // Tablas
-export * from './roles.js';
-export * from './permisos.js';
-export * from './rolesPermisos.js';
-export * from './usuarios.js';
-export * from './usuariosRoles.js';
-export * from './prioridades.js';
-export * from './estados.js';
-export * from './tickets.js';
+export * from './roles';
+export * from './permisos';
+export * from './rolesPermisos';
+export * from './usuarios';
+export * from './usuariosRoles';
+export * from './prioridades';
+export * from './estados';
+export * from './tickets';
+export * from './departamentos';
 
 // Relaciones (necesarias para db.query.* relacional)
-export * from './relations.js';
+export * from './relations';
