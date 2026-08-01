@@ -124,7 +124,7 @@ async function remove(item) {
 
 <template>
     <div class="card">
-        <div class="card-header bg-white d-flex align-items-center justify-content-between">
+        <div class="card-header bg-body d-flex align-items-center justify-content-between">
             <h2 class="fs-6 fw-semibold m-0">{{ plural }}</h2>
             <button class="btn btn-primary btn-sm" @click="openCreate">
                 Nuevo {{ titular }}
@@ -133,7 +133,7 @@ async function remove(item) {
 
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
-                <thead class="table-light">
+                <thead class="table-secondary">
                     <tr>
                         <th
                             v-for="c in columns"
@@ -188,7 +188,7 @@ async function remove(item) {
     <!-- Modal nativo: <dialog> con backdrop y animación CSS -->
     <dialog ref="dialog" class="crud-dialog" @click="onDialogClick" @close="showForm = false">
         <div class="card border-0">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div class="card-header bg-body d-flex justify-content-between align-items-center">
                 <h3 class="fs-6 fw-semibold m-0">
                     {{ editing ? "Editar" : "Nuevo" }} {{ titular }}
                 </h3>
