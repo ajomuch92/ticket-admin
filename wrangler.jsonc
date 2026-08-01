@@ -1,14 +1,24 @@
 {
-	"$schema": "./node_modules/wrangler/config-schema.json",
-	"compatibility_date": "2026-07-31",
-	"compatibility_flags": ["global_fetch_strictly_public"],
-	"name": "ticket-admin",
-	"main": "@astrojs/cloudflare/entrypoints/server",
-	"assets": {
-		"directory": "./dist",
-		"binding": "ASSETS"
-	},
-	"observability": {
-		"enabled": true
-	}
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "compatibility_date": "2026-07-31",
+    "compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
+    "name": "ticket-admin",
+    "main": "@astrojs/cloudflare/entrypoints/server",
+    "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+    },
+    "observability": {
+        "enabled": true,
+    },
+    // Hyperdrive: acelera/proxya un MySQL accesible públicamente.
+    // `id`: de `wrangler hyperdrive create`. NO es secreto (safe de commitear).
+    // La cadena de conexión local NO va aquí (tiene password) — se pasa por la
+    // env var CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE (en .env).
+    "hyperdrive": [
+        {
+            "binding": "HYPERDRIVE",
+            "id": "6de937009e58417ebecaf0115b95ea19",
+        },
+    ],
 }
