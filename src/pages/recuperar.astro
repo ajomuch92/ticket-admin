@@ -1,0 +1,63 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { KeyRound, ArrowLeft } from "@lucide/astro";
+---
+
+<Layout title="Recuperar Contraseña | Ticket Admin">
+    <div
+        class="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3"
+    >
+        <div class="card border-0 shadow-sm" style="max-width: 400px; width: 100%">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-center mb-4">
+                    <KeyRound
+                        class="me-2 text-primary"
+                        width="32"
+                        height="32"
+                        stroke-width="2"
+                    />
+                    <span class="fs-4 fw-bold"
+                        >Ticket<span class="text-primary">Admin</span></span
+                    >
+                </div>
+
+                <h1 class="fs-5 fw-semibold text-center mb-2">
+                    Recuperar Contraseña
+                </h1>
+                <p class="small text-muted text-center mb-4">
+                    Ingresa tu correo y te enviaremos instrucciones para
+                    restablecer tu contraseña.
+                </p>
+
+                <form>
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-medium"
+                            >Correo electrónico</label
+                        >
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            class="form-control"
+                            placeholder="admin@ejemplo.com"
+                        />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-2" disabled>
+                        Enviar instrucciones
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer bg-light text-center border-top">
+                <a
+                    href="/login"
+                    class="small text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+                >
+                    <ArrowLeft width="14" height="14" stroke-width="2" />
+                    Volver a iniciar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</Layout>
