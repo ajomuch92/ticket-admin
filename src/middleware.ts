@@ -22,10 +22,12 @@ export const onRequest = defineMiddleware((context, next) => {
         return new Response("No autorizado", { status: 401 });
     }
 
-    // Abrir contexto de DB solo en rutas que la tocan (dashboard, actions, login POST).
+    // Abrir contexto de DB solo en rutas que la tocan (dashboard, actions, login POST,
+    // y el endpoint público /api/ticket). /api/chat NO usa DB (solo IA).
     const needsDb =
         path.startsWith("/dashboard") ||
         path.startsWith("/_actions") ||
+        path === "/api/ticket" ||
         (path === "/login" && context.request.method === "POST");
 
     const hyperdrive = (env as { HYPERDRIVE?: HyperdriveBinding }).HYPERDRIVE;
