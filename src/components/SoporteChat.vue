@@ -12,6 +12,7 @@ const messages = ref([
 ]);
 const input = ref("");
 const loading = ref(false);
+const streaming = ref(false); // true cuando ya llegan tokens (dejó de "pensar")
 const ticketData = ref(null); // { nombre, email, titulo, descripcion }
 const creado = ref(null); // id del ticket creado
 const scroller = ref(null);
@@ -29,31 +30,75 @@ async function send() {
     messages.value.push({ role: "user", content: text });
     input.value = "";
     loading.value = true;
+    streaming.value = false;
 
-    const { data, error } = await actions.soporte.chat({
-        messages: messages.value,
-    });
-    loading.value = false;
+    // Solo mensajes con contenido al backend (evita bubbles vacíos)
+    const payload = messages.value.filter((m) => m.content);
 
-    if (error) {
-        showToast(error.message || "Error del asistente", "danger");
+    let res;
+    try {
+        res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ messages: payload }),
+        });
+    } catch {
+        loading.value = false;
+        showToast("No se pudo conectar con el asistente", "danger");
+        return;
+    }
+    if (!res.ok || !res.body) {
+        loading.value = false;
+        showToast("El asistente no está disponible", "danger");
         return;
     }
 
-    let reply = data.reply || "";
-    const m = reply.match(/<<TICKET>>\s*(\{[\s\S]*\})/);
+    // Bubble del asistente que se irá llenando token a token.
+    const idx = messages.value.push({ role: "assistant", content: "" }) - 1;
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let full = "";
+    let buffer = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // guarda la línea incompleta
+        for (const line of lines) {
+            const l = line.trim();
+            if (!l.startsWith("data:")) continue;
+            const d = l.slice(5).trim();
+            if (d === "[DONE]") continue;
+            try {
+                const obj = JSON.parse(d);
+                if (obj.response) {
+                    streaming.value = true;
+                    full += obj.response;
+                    // oculta el marcador <<TICKET>> mientras escribe
+                    messages.value[idx].content = full.split("<<TICKET>>")[0].trimEnd();
+                }
+            } catch {
+                /* fragmento no-JSON, ignora */
+            }
+        }
+    }
+
+    loading.value = false;
+    streaming.value = false;
+
+    // Extrae el ticket del texto completo (con el marcador).
+    const m = full.match(/<<TICKET>>\s*(\{[\s\S]*\})/);
     if (m) {
         try {
             ticketData.value = JSON.parse(m[1]);
         } catch {
-            /* ignora JSON malformado */
+            /* json malformado, ignora */
         }
-        reply = reply.replace(/<<TICKET>>[\s\S]*$/, "").trim();
     }
-    messages.value.push({
-        role: "assistant",
-        content: reply || "Perfecto, tengo lo necesario.",
-    });
+    messages.value[idx].content =
+        full.split("<<TICKET>>")[0].trim() || "Perfecto, tengo lo necesario.";
 }
 
 async function crear() {
@@ -91,7 +136,11 @@ async function crear() {
                 </div>
             </div>
 
-            <div v-if="loading" class="text-muted small">Escribiendo…</div>
+            <div v-if="loading && !streaming" class="d-flex mb-2">
+                <div class="px-3 py-2 rounded-3 bg-body-tertiary text-muted">
+                    Pensando<span class="thinking-dots"></span>
+                </div>
+            </div>
 
             <!-- Resumen del ticket para confirmar -->
             <div v-if="ticketData" class="border rounded-3 p-3 mt-2">
@@ -129,3 +178,24 @@ async function crear() {
         </div>
     </div>
 </template>
+
+<style scoped>
+.thinking-dots::after {
+    content: "";
+    animation: thinking 1.2s steps(1, end) infinite;
+}
+@keyframes thinking {
+    0% {
+        content: "";
+    }
+    25% {
+        content: ".";
+    }
+    50% {
+        content: "..";
+    }
+    75% {
+        content: "...";
+    }
+}
+</style>
