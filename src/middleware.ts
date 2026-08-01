@@ -11,10 +11,11 @@ export const onRequest = defineMiddleware((context, next) => {
         return context.redirect("/login");
     }
 
-    // Abrir contexto de DB solo en rutas que la tocan (páginas dashboard y actions).
+    // Abrir contexto de DB solo en rutas que la tocan (dashboard, actions, login POST).
     const needsDb =
         context.url.pathname.startsWith("/dashboard") ||
-        context.url.pathname.startsWith("/_actions");
+        context.url.pathname.startsWith("/_actions") ||
+        (context.url.pathname === "/login" && context.request.method === "POST");
 
     const hyperdrive = (env as { HYPERDRIVE?: HyperdriveBinding }).HYPERDRIVE;
 
