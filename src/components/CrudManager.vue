@@ -1,44 +1,87 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import { actions } from "astro:actions";
 import { randomString } from "complete-js-utils";
 import { showToast, showCopyToast } from "../lib/toast";
 
+type FieldType =
+    | "text"
+    | "textarea"
+    | "number"
+    | "select"
+    | "select-number"
+    | "checkbox"
+    | "password"
+    | "date";
+
+interface Column {
+    key: string; // admite ruta anidada "estado.nombre"
+    label: string;
+    align?: "center" | "end";
+}
+
+interface FieldOption {
+    value: string | number;
+    label: string;
+}
+
+interface Field {
+    key: string;
+    label: string;
+    type: FieldType;
+    options?: FieldOption[];
+    required?: boolean;
+    lockOnEdit?: boolean;
+    hideOnEdit?: boolean;
+    generate?: boolean;
+}
+
+interface RowAction {
+    label: string;
+    actionName: string;
+    confirm?: string;
+    copyKey?: string;
+    toastLabel?: string;
+}
+
+type Item = Record<string, any>;
+
+interface Props {
+    /** Clave del namespace en `actions` (ej: "roles", "tickets"). */
+    entity: string;
+    /** Etiqueta singular para títulos ("Rol", "Ticket"). */
+    titular: string;
+    /** Título plural para el encabezado ("Roles"). */
+    plural: string;
+    initialItems?: Item[];
+    columns: Column[];
+    fields: Field[];
+    idKey?: string;
+    /** Acción extra por fila; llama actions[entity][actionName]({ id }). */
+    rowAction?: RowAction | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    initialItems: () => [],
+    idKey: "id",
+    rowAction: null,
+});
+
 const PW_CHARS =
     "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
-const props = defineProps({
-    /** Clave del namespace en `actions` (ej: "roles", "tickets"). */
-    entity: { type: String, required: true },
-    /** Etiqueta singular para títulos ("Rol", "Ticket"). */
-    titular: { type: String, required: true },
-    /** Título plural para el encabezado ("Roles"). */
-    plural: { type: String, required: true },
-    initialItems: { type: Array, default: () => [] },
-    /** Columnas: { key, label, align? }. key admite ruta anidada "estado.nombre". */
-    columns: { type: Array, required: true },
-    /** Campos del formulario: { key, label, type, options?, required?, lockOnEdit?, hideOnEdit? }. */
-    fields: { type: Array, required: true },
-    idKey: { type: String, default: "id" },
-    /**
-     * Acción extra por fila (opcional):
-     * { label, actionName, confirm?, copyKey?, toastLabel? }.
-     * Llama actions[entity][actionName]({ id }); si devuelve copyKey, lo muestra
-     * en un toast copiable.
-     */
-    rowAction: { type: Object, default: null },
-});
-
-const items = ref([...props.initialItems]);
+const items = ref<Item[]>([...props.initialItems]);
 const showForm = ref(false);
-const editing = ref(null);
-const form = ref({});
-const revealed = ref({}); // por-campo: password visible o no
+const editing = ref<Item | null>(null);
+const form = ref<Record<string, any>>({});
+const revealed = ref<Record<string, boolean>>({}); // por-campo: password visible o no
 const error = ref("");
 const saving = ref(false);
-const dialog = ref(null);
+const dialog = ref<HTMLDialogElement | null>(null);
 
-const ns = () => actions[props.entity];
+// actions se indexa por nombre dinámico: casteamos para el acceso genérico.
+const ns = (): Record<string, any> =>
+    (actions as unknown as Record<string, any>)[props.entity];
 
 // Campos visibles: oculta los hideOnEdit cuando se está editando.
 const visibleFields = computed(() =>
@@ -46,15 +89,20 @@ const visibleFields = computed(() =>
 );
 
 // Modal de confirmación (reemplaza confirm() nativo). askConfirm devuelve Promise.
-const confirmState = ref({ show: false, message: "", resolve: null });
-const confirmDialog = ref(null);
+interface ConfirmState {
+    show: boolean;
+    message: string;
+    resolve: ((value: boolean) => void) | null;
+}
+const confirmState = ref<ConfirmState>({ show: false, message: "", resolve: null });
+const confirmDialog = ref<HTMLDialogElement | null>(null);
 
-function askConfirm(message) {
+function askConfirm(message: string): Promise<boolean> {
     return new Promise((resolve) => {
         confirmState.value = { show: true, message, resolve };
     });
 }
-function resolveConfirm(value) {
+function resolveConfirm(value: boolean): void {
     confirmState.value.resolve?.(value);
     confirmState.value = { show: false, message: "", resolve: null };
 }
@@ -69,15 +117,15 @@ watch(
     },
 );
 
-function generatePassword(key) {
+function generatePassword(key: string): void {
     form.value[key] = randomString(14, PW_CHARS);
     revealed.value[key] = true; // mostrar para que el admin la vea/copie
 }
 
-const getVal = (item, key) =>
-    key.split(".").reduce((o, k) => (o == null ? o : o[k]), item);
+const getVal = (item: Item, key: string): unknown =>
+    key.split(".").reduce<any>((o, k) => (o == null ? o : o[k]), item);
 
-const alignClass = (c) =>
+const alignClass = (c: Column): string =>
     c.align === "center" ? "text-center" : c.align === "end" ? "text-end" : "";
 
 // Sincroniza el estado con el <dialog> nativo (showModal/close disparan la animación).
@@ -89,13 +137,13 @@ watch(showForm, (open) => {
 });
 
 // Click en el backdrop (target === dialog) cierra.
-function onDialogClick(e) {
+function onDialogClick(e: MouseEvent): void {
     if (e.target === dialog.value) showForm.value = false;
 }
 
-function openCreate() {
+function openCreate(): void {
     editing.value = null;
-    const f = {};
+    const f: Record<string, any> = {};
     for (const fl of props.fields) f[fl.key] = fl.type === "checkbox" ? true : "";
     form.value = f;
     revealed.value = {};
@@ -103,9 +151,9 @@ function openCreate() {
     showForm.value = true;
 }
 
-function openEdit(item) {
+function openEdit(item: Item): void {
     editing.value = item;
-    const f = {};
+    const f: Record<string, any> = {};
     for (const fl of props.fields) {
         const v = getVal(item, fl.key);
         f[fl.key] = v == null ? (fl.type === "checkbox" ? false : "") : v;
@@ -116,12 +164,12 @@ function openEdit(item) {
     showForm.value = true;
 }
 
-function buildPayload() {
-    const p = {};
+function buildPayload(): Record<string, any> {
+    const p: Record<string, any> = {};
     for (const fl of props.fields) {
         // Campos bloqueados u ocultos en edición no se envían (ej. email, password).
         if (editing.value && (fl.lockOnEdit || fl.hideOnEdit)) continue;
-        let v = form.value[fl.key];
+        let v: any = form.value[fl.key];
         if (fl.type === "number" || fl.type === "select-number") {
             v = v === "" || v == null ? undefined : Number(v);
         } else if (fl.type === "checkbox") {
@@ -135,17 +183,18 @@ function buildPayload() {
     return p;
 }
 
-async function reload() {
+async function reload(): Promise<void> {
     const { data } = await ns().list({});
     if (data) items.value = data;
 }
 
-async function save() {
+async function save(): Promise<void> {
     saving.value = true;
     error.value = "";
     const payload = buildPayload();
-    const { error: err } = editing.value
-        ? await ns().update({ [props.idKey]: editing.value[props.idKey], ...payload })
+    const current = editing.value;
+    const { error: err } = current
+        ? await ns().update({ [props.idKey]: current[props.idKey], ...payload })
         : await ns().create(payload);
     saving.value = false;
     if (err) {
@@ -154,10 +203,10 @@ async function save() {
     }
     await reload();
     showForm.value = false;
-    showToast(`${props.titular} ${editing.value ? "actualizado" : "creado"}`, "success");
+    showToast(`${props.titular} ${current ? "actualizado" : "creado"}`, "success");
 }
 
-async function remove(item) {
+async function remove(item: Item): Promise<void> {
     const ok = await askConfirm(
         `¿Eliminar ${props.titular.toLowerCase()} #${item[props.idKey]}?`,
     );
@@ -171,8 +220,9 @@ async function remove(item) {
     showToast(`${props.titular} eliminado`, "success");
 }
 
-async function runRowAction(item) {
+async function runRowAction(item: Item): Promise<void> {
     const cfg = props.rowAction;
+    if (!cfg) return;
     if (cfg.confirm && !(await askConfirm(cfg.confirm))) return;
     const { data, error: err } = await ns()[cfg.actionName]({
         [props.idKey]: item[props.idKey],
@@ -367,8 +417,8 @@ async function runRowAction(item) {
                                 :type="fl.type === 'number' ? 'number' : fl.type === 'date' ? 'date' : 'text'"
                                 class="form-control"
                                 :required="fl.required"
-                                :disabled="editing && fl.lockOnEdit"
-                                :readonly="editing && fl.lockOnEdit"
+                                :disabled="Boolean(editing && fl.lockOnEdit)"
+                                :readonly="Boolean(editing && fl.lockOnEdit)"
                             />
                             <div
                                 v-if="editing && fl.lockOnEdit"
