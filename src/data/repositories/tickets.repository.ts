@@ -129,6 +129,16 @@ export class TicketsRepository {
     return result ?? null;
   }
 
+  /** Busca por id público incluyendo estado y prioridad (para la consulta pública). */
+  async findByIdPublicoWithRelations(idPublico: string) {
+    return (
+      (await db.query.tickets.findFirst({
+        where: eq(tickets.idPublico, idPublico),
+        with: { estado: true, prioridad: true },
+      })) ?? null
+    );
+  }
+
   /** Actualiza campos de un ticket por ID. El creadorId no puede modificarse. */
   async update(id: number, data: UpdateTicketDto) {
     await db.update(tickets).set(data).where(eq(tickets.id, id));
