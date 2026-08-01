@@ -11,6 +11,8 @@ export const tickets = mysqlTable('tickets', {
   // Estado y Prioridad
   estadoId: int('estado_id').notNull(),
   prioridadId: int('prioridad_id').notNull(),
+  /** Departamento al que se clasificó el ticket (por IA). */
+  departamentoId: int('departamento_id'),
 
   // Fechas
   fechaVencimiento: datetime('fecha_vencimiento'),

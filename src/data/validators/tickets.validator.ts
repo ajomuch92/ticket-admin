@@ -5,6 +5,7 @@ export const CreateTicketSchema = z.object({
   descripcion: z.string().optional(),
   estadoId: z.number().int().positive('El estado es requerido'),
   prioridadId: z.number().int().positive('La prioridad es requerida'),
+  departamentoId: z.number().int().positive().nullable().optional(),
   /** Acepta string ISO, timestamp o Date. Se convierte automáticamente. */
   fechaVencimiento: z.coerce.date().nullable().optional(),
   creadorId: z.number().int().positive('El creador es requerido'),

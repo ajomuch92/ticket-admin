@@ -10,6 +10,8 @@ export const usuarios = mysqlTable('usuarios', {
   activo: boolean('activo').default(true),
   /** Usuario creado desde el reporte público (sin contraseña real). */
   anonimo: boolean('anonimo').default(false),
+  /** Departamento al que pertenece el agente (para asignación de tickets). */
+  departamentoId: int('departamento_id'),
   creadoEn: timestamp('creado_en').defaultNow(),
   actualizadoEn: timestamp('actualizado_en').defaultNow().onUpdateNow(),
 });

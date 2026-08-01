@@ -144,10 +144,14 @@ export const server = {
                 email: z.string().email("Email inválido").max(150),
                 password: z.string().min(6, "Mínimo 6 caracteres").max(100),
                 activo: z.boolean().optional().default(true),
+                departamentoId: z.number().int().positive().nullable().optional(),
             }),
             handler: async ({ password, ...rest }) => {
                 const passwordHash = await hashPassword(password);
-                return usuariosRepository.create({ ...rest, passwordHash });
+                return usuariosRepository.create({
+                    ...rest, passwordHash,
+                    anonimo: false
+                });
             },
         }),
         update: defineAction({
@@ -157,6 +161,7 @@ export const server = {
                 email: z.string().email().max(150).optional(),
                 password: z.string().min(6, "Mínimo 6 caracteres").max(100).optional(),
                 activo: z.boolean().optional(),
+                departamentoId: z.number().int().positive().nullable().optional(),
             }),
             handler: async ({ id, password, ...rest }) => {
                 const data: Record<string, unknown> = { ...rest };
