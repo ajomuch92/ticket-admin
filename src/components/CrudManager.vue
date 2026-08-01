@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { actions } from "astro:actions";
+import { showToast } from "../lib/toast";
 
 const props = defineProps({
     /** Clave del namespace en `actions` (ej: "roles", "tickets"). */
@@ -106,16 +107,18 @@ async function save() {
     }
     await reload();
     showForm.value = false;
+    showToast(`${props.titular} ${editing.value ? "actualizado" : "creado"}`, "success");
 }
 
 async function remove(item) {
     if (!confirm(`¿Eliminar ${props.titular.toLowerCase()} #${item[props.idKey]}?`)) return;
     const { error: err } = await ns().delete({ [props.idKey]: item[props.idKey] });
     if (err) {
-        alert(err.message || "Error al eliminar");
+        showToast(err.message || "Error al eliminar", "danger");
         return;
     }
     await reload();
+    showToast(`${props.titular} eliminado`, "success");
 }
 </script>
 

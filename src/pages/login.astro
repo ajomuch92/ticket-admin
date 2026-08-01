@@ -62,13 +62,7 @@ if (Astro.cookies.has("session")) {
                     Iniciar Sesión
                 </h1>
 
-                {
-                    loginError && (
-                        <div class="alert alert-danger py-2" role="alert">
-                            {loginError}
-                        </div>
-                    )
-                }
+                {loginError && <div id="login-error" data-message={loginError} hidden />}
 
                 <form method="POST">
                     <div class="mb-3">
@@ -145,6 +139,11 @@ if (Astro.cookies.has("session")) {
 </Layout>
 
 <script>
+    import { showToast } from "../lib/toast";
+
+    const errEl = document.getElementById("login-error");
+    if (errEl?.dataset.message) showToast(errEl.dataset.message, "danger");
+
     const toggle = document.getElementById("togglePassword");
     const input = document.getElementById("password");
     const eyeOpen = document.getElementById("eyeOpen");
