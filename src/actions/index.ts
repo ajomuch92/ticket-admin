@@ -1,6 +1,5 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro:schema";
-import { env } from "cloudflare:workers";
 import { count, eq, desc } from "drizzle-orm";
 import { randomString } from "complete-js-utils";
 import { hashPassword } from "../data/password.js";
@@ -357,42 +356,9 @@ export const server = {
         }),
     },
 
-    // ─────────────── Soporte público (chat IA + reporte) ───────────────
+    // ─────────────── Soporte público (reporte) ───────────────
+    // El chat en streaming vive en el endpoint /api/chat (las actions no streamean).
     soporte: {
-        // Conversa con el modelo de Workers AI. Público (sin sesión).
-        chat: defineAction({
-            input: z.object({
-                messages: z.array(
-                    z.object({
-                        role: z.enum(["user", "assistant"]),
-                        content: z.string().max(4000),
-                    }),
-                ),
-            }),
-            handler: async ({ messages }) => {
-                const system = {
-                    role: "system",
-                    content: `Eres un experto en atención de tickets de soporte para empresas, del sistema "Ticket Admin". Respondes en español, con tono amable y breve.
-Tu ÚNICA función es ayudar con problemas/incidencias de soporte. Si te preguntan algo fuera de ese ámbito (temas generales, opiniones, programación, cálculos, etc.), responde EXACTAMENTE: "No tengo permitido responder ese tipo de preguntas. Solo puedo ayudarte a reportar un problema de soporte." y reencauza al reporte.
-
-Flujo:
-1. Entiende el problema y clasifícalo (ej.: acceso/login, red/conexión, impresora, correo, hardware, software, otro). Menciona brevemente la categoría.
-2. Si es un problema común y sencillo, propone 1 a 3 posibles soluciones concretas en pasos y pregunta si alguna resolvió el problema.
-3. Si se resolvió, despídete cordialmente y NO crees ticket.
-4. Si NO se resuelve o es complejo, crea un ticket: recopila (1) nombre, (2) correo, (3) descripción del problema, uno a la vez si faltan.
-
-Cuando vayas a crear el ticket y ya tengas los tres datos, confirma en lenguaje natural y añade al FINAL una única línea EXACTA (sin markdown):
-<<TICKET>>{"nombre":"...","email":"...","titulo":"resumen corto (incluye la categoría)","descripcion":"detalle del problema y lo que ya se intentó"}
-No incluyas esa línea hasta tener los tres datos y que la solución sugerida no haya funcionado.`,
-                };
-                const result = await env.AI.run(
-                    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-                    { messages: [system, ...messages] },
-                );
-                return { reply: result.response ?? "" };
-            },
-        }),
-
         // Crea el ticket con los datos recopilados. El reportante se guarda como
         // usuario (find-or-create por email, inactivo) para respetar el FK creadorId.
         // ponytail: crea usuario por reportante; si te preocupa spam, añade rate-limit
