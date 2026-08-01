@@ -1,5 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro:schema";
+import { hashPassword } from "../data/password.js";
 
 import {
     rolesRepository,
@@ -38,31 +39,6 @@ const idInput = z.object({ id });
 
 const notFound = (que: string) =>
     new ActionError({ code: "NOT_FOUND", message: `${que} no encontrado` });
-
-/**
- * Hashea una contraseña con PBKDF2 (WebCrypto — disponible en Node y Cloudflare
- * Workers, sin dependencias). Formato: pbkdf2$iter$saltHex$hashHex.
- * ponytail: PBKDF2/SHA-256 correcto y sin dep; sube a argon2 si el proyecto lo pide.
- */
-async function hashPassword(password: string): Promise<string> {
-    const enc = new TextEncoder();
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await crypto.subtle.importKey(
-        "raw",
-        enc.encode(password),
-        "PBKDF2",
-        false,
-        ["deriveBits"],
-    );
-    const bits = await crypto.subtle.deriveBits(
-        { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
-        key,
-        256,
-    );
-    const hex = (buf: ArrayBuffer) =>
-        [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    return `pbkdf2$100000$${hex(salt.buffer)}$${hex(bits)}`;
-}
 
 export const server = {
     // ─────────────── Roles ───────────────
