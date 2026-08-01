@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { Ticket, Eye, EyeOff, Sun, Moon } from "@lucide/astro";
+import { Ticket, Eye, EyeOff, Sun, Moon, MessageCircle } from "@lucide/astro";
 import { usuariosRepository } from "../data/repositories";
 import { verifyPassword } from "../data/password";
 
@@ -158,6 +158,17 @@ if (sessionVal && /^\d+$/.test(sessionVal)) {
             </div>
         </div>
     </div>
+
+    <!-- Chat de soporte público (esquina inferior izquierda) -->
+    <a
+        href="/reportar"
+        class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center shadow"
+        style="width: 52px; height: 52px; z-index: 1080"
+        aria-label="Reportar un problema"
+        title="Reportar un problema"
+    >
+        <MessageCircle width="24" height="24" stroke-width="2" />
+    </a>
 </Layout>
 
 <script>

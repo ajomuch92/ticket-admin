@@ -4,6 +4,12 @@
 declare module "cloudflare:workers" {
     export const env: {
         HYPERDRIVE: import("./data/db").HyperdriveBinding;
+        AI: {
+            run: (
+                model: string,
+                options: unknown,
+            ) => Promise<{ response?: string }>;
+        };
         [key: string]: unknown;
     };
 }
