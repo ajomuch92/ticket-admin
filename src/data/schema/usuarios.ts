@@ -8,6 +8,8 @@ export const usuarios = mysqlTable('usuarios', {
   /** Almacenar SIEMPRE el hash (bcrypt/argon2), nunca la contraseña plana. */
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   activo: boolean('activo').default(true),
+  /** Usuario creado desde el reporte público (sin contraseña real). */
+  anonimo: boolean('anonimo').default(false),
   creadoEn: timestamp('creado_en').defaultNow(),
   actualizadoEn: timestamp('actualizado_en').defaultNow().onUpdateNow(),
 });

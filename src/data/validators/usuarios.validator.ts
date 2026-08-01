@@ -9,6 +9,7 @@ export const CreateUsuarioSchema = z.object({
    */
   passwordHash: z.string().min(1, 'El hash de contraseña es requerido').max(255),
   activo: z.boolean().optional().default(true),
+  anonimo: z.boolean().optional().default(false),
 });
 
 export const UpdateUsuarioSchema = z.object({

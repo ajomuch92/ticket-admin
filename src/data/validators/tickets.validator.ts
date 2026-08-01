@@ -10,6 +10,8 @@ export const CreateTicketSchema = z.object({
   creadorId: z.number().int().positive('El creador es requerido'),
   /** null = sin asignar. */
   asignadoAId: z.number().int().positive().nullable().optional(),
+  /** UUID público; si no se pasa, el repositorio lo genera. */
+  idPublico: z.string().max(36).optional(),
 });
 
 /** Para actualizar tickets: todos los campos son opcionales excepto creadorId (no modificable). */
