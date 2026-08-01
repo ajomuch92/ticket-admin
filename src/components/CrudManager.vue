@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { actions } from "astro:actions";
 
 const props = defineProps({
@@ -21,8 +21,10 @@ const items = ref([...props.initialItems]);
 const showForm = ref(false);
 const editing = ref(null);
 const form = ref({});
+const revealed = ref({}); // por-campo: password visible o no
 const error = ref("");
 const saving = ref(false);
+const dialog = ref(null);
 
 const ns = () => actions[props.entity];
 
@@ -32,11 +34,25 @@ const getVal = (item, key) =>
 const alignClass = (c) =>
     c.align === "center" ? "text-center" : c.align === "end" ? "text-end" : "";
 
+// Sincroniza el estado con el <dialog> nativo (showModal/close disparan la animación).
+watch(showForm, (open) => {
+    const d = dialog.value;
+    if (!d) return;
+    if (open && !d.open) d.showModal();
+    else if (!open && d.open) d.close();
+});
+
+// Click en el backdrop (target === dialog) cierra.
+function onDialogClick(e) {
+    if (e.target === dialog.value) showForm.value = false;
+}
+
 function openCreate() {
     editing.value = null;
     const f = {};
     for (const fl of props.fields) f[fl.key] = fl.type === "checkbox" ? true : "";
     form.value = f;
+    revealed.value = {};
     error.value = "";
     showForm.value = true;
 }
@@ -49,6 +65,7 @@ function openEdit(item) {
         f[fl.key] = v == null ? (fl.type === "checkbox" ? false : "") : v;
     }
     form.value = f;
+    revealed.value = {};
     error.value = "";
     showForm.value = true;
 }
@@ -165,9 +182,9 @@ async function remove(item) {
         </div>
     </div>
 
-    <!-- Modal -->
-    <div v-if="showForm" class="crud-backdrop" @click.self="showForm = false">
-        <div class="card shadow" style="max-width: 480px; width: 100%">
+    <!-- Modal nativo: <dialog> con backdrop y animación CSS -->
+    <dialog ref="dialog" class="crud-dialog" @click="onDialogClick" @close="showForm = false">
+        <div class="card border-0">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h3 class="fs-6 fw-semibold m-0">
                     {{ editing ? "Editar" : "Nuevo" }} {{ titular }}
@@ -214,18 +231,57 @@ async function remove(item) {
                                     {{ o.label }}
                                 </option>
                             </select>
+                            <!-- Password con ojito show/hide -->
+                            <div v-else-if="fl.type === 'password'" class="input-group">
+                                <input
+                                    v-model="form[fl.key]"
+                                    :type="revealed[fl.key] ? 'text' : 'password'"
+                                    class="form-control"
+                                    :required="fl.required"
+                                />
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary d-flex align-items-center"
+                                    :aria-label="revealed[fl.key] ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                                    @click="revealed[fl.key] = !revealed[fl.key]"
+                                >
+                                    <svg
+                                        v-if="!revealed[fl.key]"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                    <svg
+                                        v-else
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" />
+                                        <path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.7 9.7 0 0 0 5.39-1.61" />
+                                        <line x1="2" x2="22" y1="2" y2="22" />
+                                    </svg>
+                                </button>
+                            </div>
                             <input
                                 v-else
                                 v-model="form[fl.key]"
-                                :type="
-                                    fl.type === 'number'
-                                        ? 'number'
-                                        : fl.type === 'password'
-                                          ? 'password'
-                                          : fl.type === 'date'
-                                            ? 'date'
-                                            : 'text'
-                                "
+                                :type="fl.type === 'number' ? 'number' : fl.type === 'date' ? 'date' : 'text'"
                                 class="form-control"
                                 :required="fl.required"
                             />
@@ -242,18 +298,57 @@ async function remove(item) {
                 </form>
             </div>
         </div>
-    </div>
+    </dialog>
 </template>
 
 <style scoped>
-.crud-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1050;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
+.crud-dialog {
+    width: 100%;
+    max-width: 480px;
+    padding: 0;
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+
+    /* Estado cerrado (para la animación de salida) */
+    opacity: 0;
+    transform: translateY(-12px) scale(0.97);
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        overlay 0.18s ease allow-discrete,
+        display 0.18s ease allow-discrete;
+}
+
+.crud-dialog[open] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Estado inicial al abrir (animación de entrada) */
+@starting-style {
+    .crud-dialog[open] {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.97);
+    }
+}
+
+.crud-dialog::backdrop {
+    background: rgba(0, 0, 0, 0);
+    transition:
+        background 0.18s ease,
+        overlay 0.18s ease allow-discrete,
+        display 0.18s ease allow-discrete;
+}
+
+.crud-dialog[open]::backdrop {
     background: rgba(0, 0, 0, 0.5);
+}
+
+@starting-style {
+    .crud-dialog[open]::backdrop {
+        background: rgba(0, 0, 0, 0);
+    }
 }
 </style>
