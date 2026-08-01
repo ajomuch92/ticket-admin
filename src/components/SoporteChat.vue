@@ -2,13 +2,12 @@
 import { ref, nextTick, watch } from "vue";
 import { showToast, showCopyToast } from "../lib/toast";
 
-const messages = ref([
-    {
-        role: "assistant",
-        content:
-            "¡Hola! Soy el asistente de soporte. Cuéntame tu problema y te ayudo a reportarlo. Para empezar, ¿cuál es tu nombre?",
-    },
-]);
+const saludo = () => ({
+    role: "assistant",
+    content:
+        "¡Hola! Soy el asistente de soporte. Cuéntame tu problema y te ayudo a reportarlo. Para empezar, ¿cuál es tu nombre?",
+});
+const messages = ref([saludo()]);
 const input = ref("");
 const loading = ref(false);
 const streaming = ref(false); // true cuando ya llegan tokens (dejó de "pensar")
@@ -100,6 +99,15 @@ async function send() {
         full.split("<<TICKET>>")[0].trim() || "Perfecto, tengo lo necesario.";
 }
 
+function reiniciar() {
+    messages.value = [saludo()];
+    input.value = "";
+    ticketData.value = null;
+    creado.value = null;
+    loading.value = false;
+    streaming.value = false;
+}
+
 async function crear() {
     if (!ticketData.value) return;
     loading.value = true;
@@ -172,12 +180,21 @@ async function crear() {
 
             <div v-if="creado" class="alert alert-success mt-2 mb-0">
                 Ticket creado. Tu código de seguimiento es
-                <strong>{{ creado }}</strong>. Guárdalo para consultarlo luego.
+                <strong>{{ creado }}</strong>. Guárdalo para consultarlo luego en
+                <a :href="`/buscar?id=${creado}`">Consultar un ticket</a>.
             </div>
         </div>
 
         <div class="card-footer bg-body">
-            <form class="d-flex gap-2" @submit.prevent="send">
+            <button
+                v-if="creado"
+                type="button"
+                class="btn btn-outline-primary w-100"
+                @click="reiniciar"
+            >
+                Nueva conversación
+            </button>
+            <form v-else class="d-flex gap-2" @submit.prevent="send">
                 <input
                     v-model="input"
                     type="text"

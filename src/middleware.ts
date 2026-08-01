@@ -28,6 +28,7 @@ export const onRequest = defineMiddleware((context, next) => {
         path.startsWith("/dashboard") ||
         path.startsWith("/_actions") ||
         path === "/api/ticket" ||
+        path === "/buscar" ||
         (path === "/login" && context.request.method === "POST");
 
     const hyperdrive = (env as { HYPERDRIVE?: HyperdriveBinding }).HYPERDRIVE;
