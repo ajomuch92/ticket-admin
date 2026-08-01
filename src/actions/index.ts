@@ -13,6 +13,7 @@ import {
     prioridadesRepository,
     estadosRepository,
     ticketsRepository,
+    departamentosRepository,
 } from "../data/repositories/index.js";
 
 import {
@@ -32,6 +33,9 @@ import {
     CreateTicketSchema,
     UpdateTicketSchema,
     FilterTicketSchema,
+    CreateDepartamentoSchema,
+    UpdateDepartamentoSchema,
+    FilterDepartamentoSchema,
 } from "../data/validators/index.js";
 
 // ponytail: los inputs usan accept:"json" (default). Las actions se llaman desde
@@ -352,6 +356,42 @@ export const server = {
                         fecha: t.creadoEn,
                     })),
                 };
+            },
+        }),
+    },
+
+    // ─────────────── Departamentos ───────────────
+    departamentos: {
+        list: defineAction({
+            input: FilterDepartamentoSchema,
+            handler: (filters) => departamentosRepository.findAll(filters),
+        }),
+        get: defineAction({
+            input: idInput,
+            handler: async ({ id }) => {
+                const dep = await departamentosRepository.findById(id);
+                if (!dep) throw notFound("Departamento");
+                return dep;
+            },
+        }),
+        create: defineAction({
+            input: CreateDepartamentoSchema,
+            handler: (data) => departamentosRepository.create(data),
+        }),
+        update: defineAction({
+            input: UpdateDepartamentoSchema.extend({ id }),
+            handler: async ({ id, ...data }) => {
+                const dep = await departamentosRepository.update(id, data);
+                if (!dep) throw notFound("Departamento");
+                return dep;
+            },
+        }),
+        delete: defineAction({
+            input: idInput,
+            handler: async ({ id }) => {
+                const dep = await departamentosRepository.delete(id);
+                if (!dep) throw notFound("Departamento");
+                return dep;
             },
         }),
     },
