@@ -1,11 +1,26 @@
 import { defineMiddleware } from "astro:middleware";
+import { env } from "cloudflare:workers";
+import { withDb, type HyperdriveBinding } from "./data/db.js";
 
 export const onRequest = defineMiddleware((context, next) => {
-    // if (
-    //     context.url.pathname.startsWith("/dashboard") &&
-    //     !context.cookies.has("session")
-    // ) {
-    //     return context.redirect("/login");
-    // }
+    // Guard de sesión para el dashboard.
+    if (
+        context.url.pathname.startsWith("/dashboard") &&
+        !context.cookies.has("session")
+    ) {
+        return context.redirect("/login");
+    }
+
+    // Abrir contexto de DB solo en rutas que la tocan (páginas dashboard y actions).
+    const needsDb =
+        context.url.pathname.startsWith("/dashboard") ||
+        context.url.pathname.startsWith("/_actions");
+
+    const hyperdrive = (env as { HYPERDRIVE?: HyperdriveBinding }).HYPERDRIVE;
+
+    if (needsDb && hyperdrive) {
+        return withDb(hyperdrive, () => next());
+    }
+
     return next();
 });
