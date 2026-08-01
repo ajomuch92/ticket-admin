@@ -1,7 +1,6 @@
 <script setup>
 import { ref, nextTick, watch } from "vue";
-import { actions } from "astro:actions";
-import { showToast } from "../lib/toast";
+import { showToast, showCopyToast } from "../lib/toast";
 
 const messages = ref([
     {
@@ -104,15 +103,30 @@ async function send() {
 async function crear() {
     if (!ticketData.value) return;
     loading.value = true;
-    const { data, error } = await actions.soporte.crearTicket(ticketData.value);
-    loading.value = false;
-    if (error) {
-        showToast(error.message || "No se pudo crear el ticket", "danger");
+    let res;
+    try {
+        res = await fetch("/api/ticket", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(ticketData.value),
+        });
+    } catch {
+        loading.value = false;
+        showToast("No se pudo crear el ticket", "danger");
         return;
     }
-    creado.value = data.id;
+    loading.value = false;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        showToast(data.error || "No se pudo crear el ticket", "danger");
+        return;
+    }
+    creado.value = data.idPublico;
     ticketData.value = null;
-    showToast(`Ticket #${data.id} creado. ¡Gracias!`, "success");
+    showCopyToast(
+        "Ticket creado. Guarda este código para dar seguimiento:",
+        data.idPublico ?? "",
+    );
 }
 </script>
 
@@ -157,8 +171,8 @@ async function crear() {
             </div>
 
             <div v-if="creado" class="alert alert-success mt-2 mb-0">
-                Tu ticket <strong>#{{ creado }}</strong> fue creado. Te contactaremos
-                por correo.
+                Ticket creado. Tu código de seguimiento es
+                <strong>{{ creado }}</strong>. Guárdalo para consultarlo luego.
             </div>
         </div>
 

@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import { z } from "astro:schema";
 import {
     usuariosRepository,
     estadosRepository,
@@ -9,32 +8,38 @@ import {
 
 export const prerender = false;
 
-const schema = z.object({
-    nombre: z.string().min(1).max(100),
-    email: z.string().email().max(150),
-    titulo: z.string().min(1).max(200),
-    descripcion: z.string().max(2000).optional(),
-});
-
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), {
         status,
         headers: { "content-type": "application/json" },
     });
 
+// El modelo no siempre da JSON limpio: extrae el correo aunque venga embebido
+// (ej. "Ana <ana@x.com>").
+function extractEmail(s: string): string | null {
+    const m = s.match(/[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+/);
+    const email = m?.[0]?.toLowerCase();
+    return email && email.length <= 150 ? email : null;
+}
+
 export const POST: APIRoute = async ({ request }) => {
-    let body: unknown;
+    let body: Record<string, unknown>;
     try {
         body = await request.json();
     } catch {
         return json({ error: "JSON inválido" }, 400);
     }
 
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-        return json({ error: "Datos inválidos" }, 400);
-    }
-    const { nombre, email, titulo, descripcion } = parsed.data;
+    // Saneado tolerante (el payload viene del modelo, no de un formulario).
+    const nombre = String(body.nombre ?? "").trim().slice(0, 100);
+    const email = extractEmail(String(body.email ?? ""));
+    const titulo =
+        String(body.titulo ?? "").trim().slice(0, 200) || "Reporte de soporte";
+    const descripcion =
+        String(body.descripcion ?? "").trim().slice(0, 2000) || undefined;
+
+    if (!nombre) return json({ error: "Falta el nombre." }, 400);
+    if (!email) return json({ error: "Correo inválido o ausente." }, 400);
 
     // Usuario: buscar por correo; si no existe, crear uno anónimo (sin contraseña).
     let user = await usuariosRepository.findByEmail(email);

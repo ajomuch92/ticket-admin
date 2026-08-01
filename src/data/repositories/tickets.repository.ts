@@ -110,10 +110,23 @@ export class TicketsRepository {
     }) ?? null;
   }
 
-  /** Crea un nuevo ticket y devuelve el registro completo. */
+  /** Crea un nuevo ticket (asigna id_publico UUID si no viene) y lo devuelve. */
   async create(data: CreateTicketDto) {
-    const [{ id }] = await db.insert(tickets).values(data).$returningId();
+    const idPublico = data.idPublico ?? crypto.randomUUID();
+    const [{ id }] = await db
+      .insert(tickets)
+      .values({ ...data, idPublico })
+      .$returningId();
     return this.findById(id);
+  }
+
+  /** Busca un ticket por su id público (UUID). Devuelve null si no existe. */
+  async findByIdPublico(idPublico: string) {
+    const [result] = await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.idPublico, idPublico));
+    return result ?? null;
   }
 
   /** Actualiza campos de un ticket por ID. El creadorId no puede modificarse. */
