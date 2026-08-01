@@ -3,7 +3,14 @@ import DashboardLayout from "../../layouts/DashboardLayout.astro";
 import { actions } from "astro:actions";
 import CrudManager from "../../components/CrudManager.vue";
 
-const { data: usuarios } = await Astro.callAction(actions.usuarios.list, {});
+const [{ data: usuarios }, { data: departamentos }] = await Promise.all([
+    Astro.callAction(actions.usuarios.list, {}),
+    Astro.callAction(actions.departamentos.list, {}),
+]);
+const departamentoOpts = (departamentos ?? []).map((d) => ({
+    value: d.id,
+    label: d.nombre,
+}));
 ---
 
 <DashboardLayout pageTitle="Gestión de Usuarios">
@@ -29,6 +36,12 @@ const { data: usuarios } = await Astro.callAction(actions.usuarios.list, {});
                 required: true,
                 hideOnEdit: true,
                 generate: true,
+            },
+            {
+                key: "departamentoId",
+                label: "Departamento",
+                type: "select-number",
+                options: departamentoOpts,
             },
             { key: "activo", label: "Usuario activo", type: "checkbox" },
         ]}
