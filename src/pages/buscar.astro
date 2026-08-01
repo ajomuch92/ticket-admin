@@ -1,0 +1,91 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { ticketsRepository } from "../data/repositories";
+import { Search, ArrowLeft } from "@lucide/astro";
+
+const id = (Astro.url.searchParams.get("id") ?? "").trim();
+const buscado = id !== "";
+const ticket = buscado
+    ? await ticketsRepository.findByIdPublicoWithRelations(id)
+    : null;
+
+const fmtFecha = (f: unknown) =>
+    f
+        ? new Date(f as string).toLocaleString("es-ES", {
+              dateStyle: "short",
+              timeStyle: "short",
+          })
+        : "—";
+---
+
+<Layout title="Consultar ticket | Ticket Admin">
+    <div class="container py-4" style="max-width: 560px">
+        <a
+            href="/reportar"
+            class="btn btn-sm btn-outline-secondary mb-3 d-inline-flex align-items-center gap-1"
+        >
+            <ArrowLeft width="16" height="16" stroke-width="2" />
+            Volver al soporte
+        </a>
+
+        <h1 class="fs-4 fw-semibold mb-1">Consultar mi ticket</h1>
+        <p class="text-muted mb-4">
+            Pega el código de seguimiento que recibiste al reportar.
+        </p>
+
+        <form method="GET" class="input-group mb-4">
+            <input
+                type="text"
+                name="id"
+                class="form-control"
+                placeholder="Código de seguimiento (UUID)"
+                value={id}
+                required
+            />
+            <button type="submit" class="btn btn-primary d-flex align-items-center gap-1">
+                <Search width="16" height="16" stroke-width="2" />
+                Buscar
+            </button>
+        </form>
+
+        {
+            buscado && !ticket && (
+                <div class="alert alert-warning">
+                    No encontramos ningún ticket con ese código. Verifica que esté
+                    completo.
+                </div>
+            )
+        }
+
+        {
+            ticket && (
+                <div class="card">
+                    <div class="card-header bg-body d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Ticket #{ticket.id}</span>
+                        <span class="badge bg-secondary">
+                            {ticket.estado?.nombre ?? "—"}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="fs-5 fw-semibold mb-3">{ticket.titulo}</h2>
+                        <dl class="row mb-0 small">
+                            <dt class="col-4 text-muted">Prioridad</dt>
+                            <dd class="col-8">{ticket.prioridad?.nombre ?? "—"}</dd>
+
+                            <dt class="col-4 text-muted">Estado</dt>
+                            <dd class="col-8">{ticket.estado?.nombre ?? "—"}</dd>
+
+                            <dt class="col-4 text-muted">Creado</dt>
+                            <dd class="col-8">{fmtFecha(ticket.creadoEn)}</dd>
+
+                            <dt class="col-4 text-muted">Descripción</dt>
+                            <dd class="col-8" style="white-space: pre-wrap">
+                                {ticket.descripcion || "—"}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            )
+        }
+    </div>
+</Layout>
