@@ -3,11 +3,12 @@ import { env } from "cloudflare:workers";
 import { withDb, type HyperdriveBinding } from "./data/db.js";
 
 export const onRequest = defineMiddleware((context, next) => {
-    // Guard de sesión para el dashboard.
-    if (
-        context.url.pathname.startsWith("/dashboard") &&
-        !context.cookies.has("session")
-    ) {
+    // Sesión válida = id numérico. Una sesión vieja/corrupta se limpia.
+    const sessionVal = context.cookies.get("session")?.value;
+    const loggedIn = !!sessionVal && /^\d+$/.test(sessionVal);
+
+    if (context.url.pathname.startsWith("/dashboard") && !loggedIn) {
+        if (sessionVal) context.cookies.delete("session", { path: "/" });
         return context.redirect("/login");
     }
 
