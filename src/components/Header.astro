@@ -1,5 +1,5 @@
 ---
-import { Bell, ChevronDown } from "@lucide/astro";
+import { ChevronDown } from "@lucide/astro";
 
 interface Props {
     title?: string;
@@ -15,15 +15,6 @@ const { title = "Dashboard" } = Astro.props;
     <h1 class="fs-5 fw-semibold m-0">{title}</h1>
 
     <div class="d-flex align-items-center gap-3">
-        <button
-            class="btn btn-light d-flex align-items-center justify-content-center p-0 text-secondary"
-            style="width: 36px; height: 36px"
-        >
-            <Bell width="20" height="20" stroke-width="2" />
-        </button>
-
-        <div class="border-start" style="height: 24px"></div>
-
         <div
             class="d-flex align-items-center gap-2 p-1 pe-3 rounded"
             style="cursor: pointer"
