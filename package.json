@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "generate-types": "wrangler types"
+    "seed:user": "node --env-file=.env scripts/seed-user.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.7",
