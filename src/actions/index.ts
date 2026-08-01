@@ -1,5 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro:schema";
+import { env } from "cloudflare:workers";
 import { count, eq, desc } from "drizzle-orm";
 import { randomString } from "complete-js-utils";
 import { hashPassword } from "../data/password.js";
@@ -352,6 +353,86 @@ export const server = {
                         fecha: t.creadoEn,
                     })),
                 };
+            },
+        }),
+    },
+
+    // ─────────────── Soporte público (chat IA + reporte) ───────────────
+    soporte: {
+        // Conversa con el modelo de Workers AI. Público (sin sesión).
+        chat: defineAction({
+            input: z.object({
+                messages: z.array(
+                    z.object({
+                        role: z.enum(["user", "assistant"]),
+                        content: z.string().max(4000),
+                    }),
+                ),
+            }),
+            handler: async ({ messages }) => {
+                const system = {
+                    role: "system",
+                    content: `Eres un experto en atención de tickets de soporte para empresas, del sistema "Ticket Admin". Respondes en español, con tono amable y breve.
+Tu ÚNICA función es ayudar a reportar problemas/incidencias de soporte. Si te preguntan algo fuera de ese ámbito (temas generales, opiniones, programación, cálculos, etc.), responde EXACTAMENTE: "No tengo permitido responder ese tipo de preguntas. Solo puedo ayudarte a reportar un problema de soporte." y reencauza al reporte.
+Para el reporte debes recopilar TRES datos: (1) nombre, (2) correo electrónico, (3) descripción del problema. Pregunta lo que falte, una cosa a la vez.
+Cuando ya tengas los tres, confirma en lenguaje natural y añade al FINAL una única línea EXACTA (sin markdown):
+<<TICKET>>{"nombre":"...","email":"...","titulo":"resumen corto","descripcion":"detalle del problema"}
+No incluyas esa línea hasta tener los tres datos.`,
+                };
+                const result = await env.AI.run(
+                    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+                    { messages: [system, ...messages] },
+                );
+                return { reply: result.response ?? "" };
+            },
+        }),
+
+        // Crea el ticket con los datos recopilados. El reportante se guarda como
+        // usuario (find-or-create por email, inactivo) para respetar el FK creadorId.
+        // ponytail: crea usuario por reportante; si te preocupa spam, añade rate-limit
+        // o campos reporter* en la tabla tickets en vez de crear usuarios.
+        crearTicket: defineAction({
+            input: z.object({
+                nombre: z.string().min(1).max(100),
+                email: z.string().email().max(150),
+                titulo: z.string().min(1).max(200),
+                descripcion: z.string().max(2000).optional(),
+            }),
+            handler: async ({ nombre, email, titulo, descripcion }) => {
+                let user = await usuariosRepository.findByEmail(email);
+                if (!user) {
+                    const passwordHash = await hashPassword(
+                        randomString(
+                            16,
+                            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789",
+                        ),
+                    );
+                    user = await usuariosRepository.create({
+                        nombre,
+                        email,
+                        passwordHash,
+                        activo: false,
+                    });
+                }
+
+                const [estado] = await estadosRepository.findAll();
+                const [prioridad] = await prioridadesRepository.findAll();
+                if (!estado || !prioridad || !user) {
+                    throw new ActionError({
+                        code: "BAD_REQUEST",
+                        message:
+                            "No hay estados/prioridades configurados para crear el ticket.",
+                    });
+                }
+
+                const ticket = await ticketsRepository.create({
+                    titulo,
+                    descripcion,
+                    estadoId: estado.id,
+                    prioridadId: prioridad.id,
+                    creadorId: user.id,
+                });
+                return { id: ticket?.id ?? null };
             },
         }),
     },
