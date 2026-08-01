@@ -1,6 +1,6 @@
-import { eq, like, and, isNull, desc } from 'drizzle-orm';
+import { eq, like, and, isNull, desc, count } from 'drizzle-orm';
 import { db } from '../db.js';
-import { tickets } from '../schema/index.js';
+import { tickets, usuarios } from '../schema/index.js';
 import type { CreateTicketDto, UpdateTicketDto, FilterTicketDto } from '../validators/tickets.validator.js';
 
 export class TicketsRepository {
@@ -127,6 +127,29 @@ export class TicketsRepository {
       .from(tickets)
       .where(eq(tickets.idPublico, idPublico));
     return result ?? null;
+  }
+
+  /**
+   * Devuelve el id del agente (usuario activo, no anónimo) del departamento dado
+   * con MENOS tickets asignados. null si el departamento no tiene agentes.
+   */
+  async agenteConMenosTickets(departamentoId: number): Promise<number | null> {
+    const rows = await db
+      .select({ id: usuarios.id, total: count(tickets.id) })
+      .from(usuarios)
+      .leftJoin(tickets, eq(tickets.asignadoAId, usuarios.id))
+      .where(
+        and(
+          eq(usuarios.departamentoId, departamentoId),
+          eq(usuarios.activo, true),
+          eq(usuarios.anonimo, false),
+        ),
+      )
+      .groupBy(usuarios.id);
+
+    if (rows.length === 0) return null;
+    rows.sort((a, b) => Number(a.total) - Number(b.total));
+    return rows[0].id;
   }
 
   /** Busca por id público incluyendo estado y prioridad (para la consulta pública). */

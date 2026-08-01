@@ -1,12 +1,16 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import {
     usuariosRepository,
     estadosRepository,
     prioridadesRepository,
+    departamentosRepository,
     ticketsRepository,
 } from "../../data/repositories";
 
 export const prerender = false;
+
+const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), {
@@ -20,6 +24,33 @@ function extractEmail(s: string): string | null {
     const m = s.match(/[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+/);
     const email = m?.[0]?.toLowerCase();
     return email && email.length <= 150 ? email : null;
+}
+
+// Le pasa la lista de departamentos al modelo y devuelve el id del que mejor
+// encaje. Fallback: el primero. null si no hay departamentos.
+async function clasificarDepartamento(
+    texto: string,
+    deps: { id: number; nombre: string }[],
+): Promise<number | null> {
+    if (deps.length === 0) return null;
+    const lista = deps.map((d) => `- ${d.nombre}`).join("\n");
+    try {
+        const res = await env.AI.run(MODEL, {
+            messages: [
+                {
+                    role: "user",
+                    content: `Clasifica este problema de soporte en UNO de estos departamentos. Responde SOLO con el nombre exacto del departamento, sin explicación.\n\nDepartamentos:\n${lista}\n\nProblema: ${texto}`,
+                },
+            ],
+        });
+        const ans = (res.response ?? "").trim().toLowerCase();
+        const match =
+            deps.find((d) => ans.includes(d.nombre.toLowerCase())) ??
+            deps.find((d) => d.nombre.toLowerCase().includes(ans));
+        return (match ?? deps[0]).id;
+    } catch {
+        return deps[0].id;
+    }
 }
 
 export const POST: APIRoute = async ({ request }) => {
@@ -62,6 +93,16 @@ export const POST: APIRoute = async ({ request }) => {
         );
     }
 
+    // Clasificar por IA en un departamento y asignar al agente menos cargado.
+    const deps = (await departamentosRepository.findAll()).filter((d) => d.activo);
+    const departamentoId = await clasificarDepartamento(
+        `${titulo}. ${descripcion ?? ""}`,
+        deps,
+    );
+    const asignadoAId = departamentoId
+        ? await ticketsRepository.agenteConMenosTickets(departamentoId)
+        : null;
+
     // idPublico (UUID) lo genera el repositorio.
     const ticket = await ticketsRepository.create({
         titulo,
@@ -69,6 +110,8 @@ export const POST: APIRoute = async ({ request }) => {
         estadoId: estado.id,
         prioridadId: prioridad.id,
         creadorId: user.id,
+        departamentoId: departamentoId ?? undefined,
+        asignadoAId: asignadoAId ?? undefined,
     });
 
     return json({ id: ticket?.id ?? null, idPublico: ticket?.idPublico ?? null });
