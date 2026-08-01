@@ -1,6 +1,9 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro:schema";
+import { count, eq, desc } from "drizzle-orm";
 import { hashPassword } from "../data/password.js";
+import { db } from "../data/db.js";
+import { tickets, estados, prioridades, usuarios } from "../data/schema/index.js";
 
 import {
     rolesRepository,
@@ -282,6 +285,56 @@ export const server = {
                 const ticket = await ticketsRepository.delete(id);
                 if (!ticket) throw notFound("Ticket");
                 return ticket;
+            },
+        }),
+    },
+
+    // ─────────────── Dashboard (agregados) ───────────────
+    dashboard: {
+        stats: defineAction({
+            input: z.object({}),
+            handler: async () => {
+                const [{ totalTickets }] = await db
+                    .select({ totalTickets: count() })
+                    .from(tickets);
+
+                const [{ usuariosActivos }] = await db
+                    .select({ usuariosActivos: count() })
+                    .from(usuarios)
+                    .where(eq(usuarios.activo, true));
+
+                const porEstado = await db
+                    .select({ nombre: estados.nombre, count: count(tickets.id) })
+                    .from(estados)
+                    .leftJoin(tickets, eq(tickets.estadoId, estados.id))
+                    .groupBy(estados.id)
+                    .orderBy(estados.orden);
+
+                const porPrioridad = await db
+                    .select({ nombre: prioridades.nombre, count: count(tickets.id) })
+                    .from(prioridades)
+                    .leftJoin(tickets, eq(tickets.prioridadId, prioridades.id))
+                    .groupBy(prioridades.id)
+                    .orderBy(prioridades.orden);
+
+                const recientes = await db.query.tickets.findMany({
+                    with: { estado: true },
+                    orderBy: [desc(tickets.creadoEn)],
+                    limit: 5,
+                });
+
+                return {
+                    totalTickets,
+                    usuariosActivos,
+                    porEstado,
+                    porPrioridad,
+                    actividadReciente: recientes.map((t) => ({
+                        id: t.id,
+                        titulo: t.titulo,
+                        estado: t.estado?.nombre ?? "—",
+                        fecha: t.creadoEn,
+                    })),
+                };
             },
         }),
     },
