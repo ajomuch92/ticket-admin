@@ -25,7 +25,7 @@ const usuarioOpts = (usuarios ?? []).map((u) => ({ value: u.id, label: u.nombre 
         initialItems={tickets ?? []}
         columns={[
             { key: "id", label: "ID" },
-            { key: "titulo", label: "Título" },
+            { key: "titulo", label: "Título", truncate: 260 },
             { key: "estado.nombre", label: "Estado" },
             { key: "prioridad.nombre", label: "Prioridad" },
             { key: "creador.nombre", label: "Creador" },

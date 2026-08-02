@@ -18,6 +18,8 @@ interface Column {
     key: string; // admite ruta anidada "estado.nombre"
     label: string;
     align?: "center" | "end";
+    /** Ancho máx en px: trunca con "…" y muestra el texto completo en el title. */
+    truncate?: number;
 }
 
 interface FieldOption {
@@ -277,6 +279,14 @@ async function runRowAction(item: Item): Promise<void> {
                                 :class="getVal(item, c.key) ? 'bg-success' : 'bg-secondary'"
                             >
                                 {{ getVal(item, c.key) ? "Sí" : "No" }}
+                            </span>
+                            <span
+                                v-else-if="c.truncate"
+                                class="d-inline-block text-truncate align-bottom"
+                                :style="`max-width: ${c.truncate}px`"
+                                :title="String(getVal(item, c.key) ?? '')"
+                            >
+                                {{ getVal(item, c.key) ?? "—" }}
                             </span>
                             <template v-else>{{ getVal(item, c.key) ?? "—" }}</template>
                         </td>
