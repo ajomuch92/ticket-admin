@@ -249,7 +249,7 @@ async function runRowAction(item: Item): Promise<void> {
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
+            <table class="table table-hover align-middle m-0 crud-table">
                 <thead class="table-secondary">
                     <tr>
                         <th
@@ -272,7 +272,12 @@ async function runRowAction(item: Item): Promise<void> {
                         </td>
                     </tr>
                     <tr v-for="item in items" :key="item[idKey]">
-                        <td v-for="c in columns" :key="c.key" :class="alignClass(c)">
+                        <td
+                            v-for="c in columns"
+                            :key="c.key"
+                            :class="alignClass(c)"
+                            :data-label="c.label"
+                        >
                             <span
                                 v-if="typeof getVal(item, c.key) === 'boolean'"
                                 class="badge"
@@ -290,7 +295,7 @@ async function runRowAction(item: Item): Promise<void> {
                             </span>
                             <template v-else>{{ getVal(item, c.key) ?? "—" }}</template>
                         </td>
-                        <td class="text-end text-nowrap">
+                        <td class="text-end text-nowrap crud-acciones">
                             <button
                                 v-if="rowAction"
                                 class="btn btn-sm btn-link text-primary p-1"
@@ -530,6 +535,51 @@ async function runRowAction(item: Item): Promise<void> {
 @starting-style {
     .crud-dialog[open]::backdrop {
         background: rgba(0, 0, 0, 0);
+    }
+}
+
+/* En móvil, cada fila se muestra como tarjeta (label: valor + acciones). */
+@media (max-width: 767.98px) {
+    .crud-table thead {
+        display: none;
+    }
+    .crud-table tbody tr {
+        display: block;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        margin-bottom: 0.75rem;
+        padding: 0.25rem 0.75rem;
+    }
+    .crud-table tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        text-align: right;
+        border: none;
+        padding: 0.45rem 0;
+    }
+    .crud-table tbody td:not(:last-child) {
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+    }
+    .crud-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--bs-secondary-color);
+        text-align: left;
+        margin-right: auto;
+    }
+    /* Celda de acciones: botones a lo ancho, sin etiqueta. */
+    .crud-table tbody td.crud-acciones {
+        justify-content: flex-end;
+        gap: 0.25rem;
+    }
+    .crud-table tbody td.crud-acciones::before {
+        content: none;
+    }
+    /* El título truncado se adapta al ancho de la tarjeta. */
+    .crud-table tbody td .text-truncate {
+        max-width: 60vw !important;
     }
 }
 </style>
