@@ -26,7 +26,7 @@ const currentUser = userId ? await usuariosRepository.findById(userId) : null;
                 email={currentUser?.email}
             />
 
-            <div class="p-4 flex-grow-1 overflow-auto">
+            <div class="p-3 p-md-4 flex-grow-1 overflow-auto">
                 <div class="mx-auto w-100" style="max-width: 1200px">
                     <slot />
                 </div>
