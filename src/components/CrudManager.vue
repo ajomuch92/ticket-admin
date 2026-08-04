@@ -2,6 +2,7 @@
 import { ref, watch, computed } from "vue";
 import { actions } from "astro:actions";
 import { randomString } from "complete-js-utils";
+import { isDark } from "is-dark-color-hsp";
 import { showToast, showCopyToast } from "../lib/toast";
 
 type FieldType =
@@ -12,7 +13,8 @@ type FieldType =
     | "select-number"
     | "checkbox"
     | "password"
-    | "date";
+    | "date"
+    | "color";
 
 interface Column {
     key: string; // admite ruta anidada "estado.nombre"
@@ -20,6 +22,8 @@ interface Column {
     align?: "center" | "end";
     /** Ancho máx en px: trunca con "…" y muestra el texto completo en el title. */
     truncate?: number;
+    /** Ruta al color hex (ej. "prioridad.color"): pinta el valor como badge. */
+    badgeColor?: string;
 }
 
 interface FieldOption {
@@ -146,6 +150,12 @@ const getVal = (item: Item, key: string): unknown =>
 
 const alignClass = (c: Column): string =>
     c.align === "center" ? "text-center" : c.align === "end" ? "text-end" : "";
+
+// Badge coloreado: fondo = color hex, texto blanco/negro según is-dark-color-hsp.
+function badgeStyle(color: unknown): Record<string, string> {
+    if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) return {};
+    return { backgroundColor: color, color: isDark(color) ? "#fff" : "#000" };
+}
 
 // Sincroniza el estado con el <dialog> nativo (showModal/close disparan la animación).
 watch(showForm, (open) => {
@@ -306,6 +316,14 @@ async function runRowAction(item: Item): Promise<void> {
                                 {{ getVal(item, c.key) ? "Sí" : "No" }}
                             </span>
                             <span
+                                v-else-if="c.badgeColor"
+                                class="badge"
+                                :class="{ 'bg-secondary': !getVal(item, c.badgeColor) }"
+                                :style="badgeStyle(getVal(item, c.badgeColor))"
+                            >
+                                {{ getVal(item, c.key) ?? "—" }}
+                            </span>
+                            <span
                                 v-else-if="c.truncate"
                                 class="d-inline-block text-truncate align-bottom"
                                 :style="`max-width: ${c.truncate}px`"
@@ -446,6 +464,13 @@ async function runRowAction(item: Item): Promise<void> {
                                     Generar
                                 </button>
                             </div>
+                            <input
+                                v-else-if="fl.type === 'color'"
+                                v-model="form[fl.key]"
+                                type="color"
+                                class="form-control form-control-color"
+                                :required="fl.required"
+                            />
                             <input
                                 v-else
                                 v-model="form[fl.key]"
