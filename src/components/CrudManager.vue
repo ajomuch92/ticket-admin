@@ -91,22 +91,39 @@ const visibleFields = computed(() =>
 );
 
 // Modal de confirmación (reemplaza confirm() nativo). askConfirm devuelve Promise.
-interface ConfirmState {
-    show: boolean;
-    message: string;
-    resolve: ((value: boolean) => void) | null;
-}
-const confirmState = ref<ConfirmState>({ show: false, message: "", resolve: null });
+const confirmState = ref<{ show: boolean; message: string }>({
+    show: false,
+    message: "",
+});
+const confirmLoading = ref(false); // true mientras corre la operación confirmada
+const confirmResolve = ref<((value: boolean) => void) | null>(null);
 const confirmDialog = ref<HTMLDialogElement | null>(null);
 
 function askConfirm(message: string): Promise<boolean> {
     return new Promise((resolve) => {
-        confirmState.value = { show: true, message, resolve };
+        confirmState.value = { show: true, message };
+        confirmResolve.value = resolve;
     });
 }
-function resolveConfirm(value: boolean): void {
-    confirmState.value.resolve?.(value);
-    confirmState.value = { show: false, message: "", resolve: null };
+/** Botón "Confirmar": resuelve true y deja el modal abierto con spinner;
+ *  el llamador lo cierra con closeConfirm() al terminar. */
+function onConfirm(): void {
+    confirmLoading.value = true;
+    const r = confirmResolve.value;
+    confirmResolve.value = null;
+    r?.(true);
+}
+/** Cancelar / backdrop / Esc: no hace nada durante la operación. */
+function onCancel(): void {
+    if (confirmLoading.value) return;
+    const r = confirmResolve.value;
+    confirmResolve.value = null;
+    confirmState.value = { show: false, message: "" };
+    r?.(false);
+}
+function closeConfirm(): void {
+    confirmLoading.value = false;
+    confirmState.value = { show: false, message: "" };
 }
 
 watch(
@@ -213,7 +230,9 @@ async function remove(item: Item): Promise<void> {
         `¿Eliminar ${props.titular.toLowerCase()} #${item[props.idKey]}?`,
     );
     if (!ok) return;
+    // El modal sigue abierto con spinner mientras corre el delete.
     const { error: err } = await ns().delete({ [props.idKey]: item[props.idKey] });
+    closeConfirm();
     if (err) {
         showToast(err.message || "Error al eliminar", "danger");
         return;
@@ -229,6 +248,7 @@ async function runRowAction(item: Item): Promise<void> {
     const { data, error: err } = await ns()[cfg.actionName]({
         [props.idKey]: item[props.idKey],
     });
+    if (cfg.confirm) closeConfirm();
     if (err) {
         showToast(err.message || "Error", "danger");
         return;
@@ -448,6 +468,11 @@ async function runRowAction(item: Item): Promise<void> {
                             Cancelar
                         </button>
                         <button type="submit" class="btn btn-primary" :disabled="saving">
+                            <span
+                                v-if="saving"
+                                class="spinner-border spinner-border-sm me-1"
+                                aria-hidden="true"
+                            ></span>
                             {{ saving ? "Guardando…" : "Guardar" }}
                         </button>
                     </div>
@@ -460,8 +485,9 @@ async function runRowAction(item: Item): Promise<void> {
     <dialog
         ref="confirmDialog"
         class="crud-dialog"
-        @click="(e) => e.target === confirmDialog && resolveConfirm(false)"
-        @close="resolveConfirm(false)"
+        @click="(e) => e.target === confirmDialog && onCancel()"
+        @close="onCancel"
+        @cancel="(e) => confirmLoading && e.preventDefault()"
     >
         <div class="card border-0">
             <div class="card-body">
@@ -470,16 +496,23 @@ async function runRowAction(item: Item): Promise<void> {
                     <button
                         type="button"
                         class="btn btn-light"
-                        @click="resolveConfirm(false)"
+                        :disabled="confirmLoading"
+                        @click="onCancel"
                     >
                         Cancelar
                     </button>
                     <button
                         type="button"
                         class="btn btn-primary"
-                        @click="resolveConfirm(true)"
+                        :disabled="confirmLoading"
+                        @click="onConfirm"
                     >
-                        Confirmar
+                        <span
+                            v-if="confirmLoading"
+                            class="spinner-border spinner-border-sm me-1"
+                            aria-hidden="true"
+                        ></span>
+                        {{ confirmLoading ? "Procesando…" : "Confirmar" }}
                     </button>
                 </div>
             </div>
