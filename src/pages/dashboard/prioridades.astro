@@ -15,12 +15,13 @@ const { data: prioridades } = await Astro.callAction(actions.prioridades.list, {
         initialItems={prioridades ?? []}
         columns={[
             { key: "id", label: "ID" },
-            { key: "nombre", label: "Prioridad" },
+            { key: "nombre", label: "Prioridad", badgeColor: "color" },
             { key: "orden", label: "Orden", align: "center" },
         ]}
         fields={[
             { key: "nombre", label: "Nombre", type: "text", required: true },
             { key: "orden", label: "Orden", type: "number" },
+            { key: "color", label: "Color", type: "color" },
         ]}
     />
 </DashboardLayout>

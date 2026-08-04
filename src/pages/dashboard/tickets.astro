@@ -27,7 +27,7 @@ const usuarioOpts = (usuarios ?? []).map((u) => ({ value: u.id, label: u.nombre 
             { key: "id", label: "ID" },
             { key: "titulo", label: "Título", truncate: 260 },
             { key: "estado.nombre", label: "Estado" },
-            { key: "prioridad.nombre", label: "Prioridad" },
+            { key: "prioridad.nombre", label: "Prioridad", badgeColor: "prioridad.color" },
             { key: "creador.nombre", label: "Creador" },
             { key: "asignadoA.nombre", label: "Asignado a" },
         ]}
