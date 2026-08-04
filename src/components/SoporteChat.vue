@@ -2,6 +2,10 @@
 import { ref, nextTick, watch } from "vue";
 import { showToast, showCopyToast } from "../lib/toast";
 
+const props = defineProps({
+    token: { type: String, default: "" }, // token del chat emitido por /reportar
+});
+
 const saludo = () => ({
     role: "assistant",
     content:
@@ -37,7 +41,10 @@ async function send() {
     try {
         res = await fetch("/api/chat", {
             method: "POST",
-            headers: { "content-type": "application/json" },
+            headers: {
+                "content-type": "application/json",
+                "x-chat-token": props.token,
+            },
             body: JSON.stringify({ messages: payload }),
         });
     } catch {
