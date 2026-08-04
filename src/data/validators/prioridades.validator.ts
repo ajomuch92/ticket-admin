@@ -3,6 +3,10 @@ import { z } from 'zod';
 export const CreatePrioridadSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido').max(30, 'Máximo 30 caracteres'),
   orden: z.number().int().min(0).optional().default(0),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido (usa formato #rrggbb)')
+    .optional(),
 });
 
 export const UpdatePrioridadSchema = CreatePrioridadSchema.partial();
