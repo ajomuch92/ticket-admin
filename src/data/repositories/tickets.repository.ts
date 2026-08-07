@@ -3,6 +3,16 @@ import { db } from '../db.js';
 import { tickets, usuarios } from '../schema/index.js';
 import type { CreateTicketDto, UpdateTicketDto, FilterTicketDto } from '../validators/tickets.validator.js';
 
+/**
+ * Código público de seguimiento: TK-AAAA-NNNN (ej. TK-2026-0147).
+ * AAAA = año de creación, NNNN = id del ticket (con ceros a la izquierda, y más
+ * dígitos si pasa de 9999).
+ */
+export const formatIdPublico = (
+  id: number,
+  year: number = new Date().getFullYear(),
+): string => `TK-${year}-${String(id).padStart(4, '0')}`;
+
 export class TicketsRepository {
   /**
    * Devuelve tickets con filtros opcionales, ordenados del más reciente al más antiguo.
@@ -110,17 +120,18 @@ export class TicketsRepository {
     }) ?? null;
   }
 
-  /** Crea un nuevo ticket (asigna id_publico UUID si no viene) y lo devuelve. */
+  /**
+   * Crea un nuevo ticket y lo devuelve. El id público (TK-AAAA-NNNN) usa el id
+   * autoincremental, así que se calcula con un UPDATE después del INSERT.
+   */
   async create(data: CreateTicketDto) {
-    const idPublico = data.idPublico ?? crypto.randomUUID();
-    const [{ id }] = await db
-      .insert(tickets)
-      .values({ ...data, idPublico })
-      .$returningId();
+    const [{ id }] = await db.insert(tickets).values(data).$returningId();
+    const idPublico = data.idPublico ?? formatIdPublico(id);
+    await db.update(tickets).set({ idPublico }).where(eq(tickets.id, id));
     return this.findById(id);
   }
 
-  /** Busca un ticket por su id público (UUID). Devuelve null si no existe. */
+  /** Busca un ticket por su id público (TK-AAAA-NNNN). Devuelve null si no existe. */
   async findByIdPublico(idPublico: string) {
     const [result] = await db
       .select()
