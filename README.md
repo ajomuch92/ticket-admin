@@ -153,7 +153,7 @@ Content-Type: application/json
 **Respuesta 200**
 
 ```json
-{ "id": 42, "idPublico": "f2c1e0a4-..." }
+{ "id": 147, "idPublico": "TK-2026-0147" }
 ```
 
 Usa `idPublico` para que el usuario dé seguimiento en `/buscar`.
@@ -168,7 +168,7 @@ Usa `idPublico` para que el usuario dé seguimiento en `/buscar`.
 3. Clasifica el ticket en un **departamento** con Workers AI (modelo
    `@cf/meta/llama-3.3-70b-instruct-fp8-fast`); si falla, usa el primer departamento activo.
 4. Lo asigna al **agente con menos tickets** de ese departamento.
-5. Genera el `idPublico` (UUID).
+5. Genera el `idPublico` con formato `TK-AAAA-NNNN` (año de creación + id del ticket, ej. `TK-2026-0147`).
 
 n8n solo necesita enviar los cuatro campos: no hay que resolver ids ni asignaciones.
 

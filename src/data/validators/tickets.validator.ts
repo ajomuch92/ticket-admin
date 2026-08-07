@@ -11,7 +11,7 @@ export const CreateTicketSchema = z.object({
   creadorId: z.number().int().positive('El creador es requerido'),
   /** null = sin asignar. */
   asignadoAId: z.number().int().positive().nullable().optional(),
-  /** UUID público; si no se pasa, el repositorio lo genera. */
+  /** Código público TK-AAAA-NNNN; si no se pasa, el repositorio lo genera. */
   idPublico: z.string().max(36).optional(),
 });
 

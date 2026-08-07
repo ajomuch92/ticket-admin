@@ -5,7 +5,7 @@ export const tickets = mysqlTable('tickets', {
   id: int('id').autoincrement().primaryKey(),
   titulo: varchar('titulo', { length: 200 }).notNull(),
   descripcion: text('descripcion'),
-  /** Identificador público (UUID) para dar seguimiento sin exponer el id interno. */
+  /** Identificador público (TK-AAAA-NNNN) para dar seguimiento sin exponer el id interno. */
   idPublico: varchar('id_publico', { length: 36 }).unique(),
 
   // Estado y Prioridad
