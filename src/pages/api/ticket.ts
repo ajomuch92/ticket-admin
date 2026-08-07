@@ -103,7 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
         ? await ticketsRepository.agenteConMenosTickets(departamentoId)
         : null;
 
-    // idPublico (UUID) lo genera el repositorio.
+    // idPublico (TK-AAAA-NNNN) lo genera el repositorio.
     const ticket = await ticketsRepository.create({
         titulo,
         descripcion,
