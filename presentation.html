@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ticket Admin — Presentación</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/night.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/highlight/monokai.css" />
+
+    <style>
+        :root {
+            --acento: #4dabf7;
+            --ok: #51cf66;
+            --alerta: #ffd43b;
+        }
+        .reveal h1, .reveal h2, .reveal h3 { text-transform: none; letter-spacing: -0.02em; }
+        .reveal section { text-align: left; }
+        .reveal .centrado { text-align: center; }
+        .reveal .acento { color: var(--acento); }
+        .reveal .ok { color: var(--ok); }
+        .reveal .alerta { color: var(--alerta); }
+        .reveal .chico { font-size: 0.72em; }
+        .reveal .mini { font-size: 0.55em; opacity: 0.75; }
+        .reveal ul { display: block; }
+
+        /* Rejilla de tarjetas */
+        .rejilla { display: grid; gap: 0.8em; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+        .tarjeta {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.6em;
+            padding: 0.7em 0.9em;
+            font-size: 0.72em;
+        }
+        .tarjeta b { color: var(--acento); display: block; margin-bottom: 0.25em; }
+
+        /* Cadena de pasos (flujo) */
+        .flujo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5em; font-size: 0.62em; }
+        .paso {
+            background: rgba(77, 171, 247, 0.14);
+            border: 1px solid rgba(77, 171, 247, 0.45);
+            border-radius: 0.5em;
+            padding: 0.45em 0.7em;
+        }
+        .flecha { opacity: 0.6; }
+
+        .reveal table { font-size: 0.62em; }
+        .reveal pre { width: 100%; box-shadow: none; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.5em; }
+        .reveal pre code { max-height: 460px; padding: 1em; }
+        /* Portada */
+        .logo-uth { width: 340px; max-width: 60%; margin: 0 auto 1em; display: block; }
+        .integrantes {
+            display: grid;
+            grid-template-columns: repeat(2, auto);
+            justify-content: center;
+            gap: 0.35em 2em;
+            margin-top: 1.2em;
+            font-size: 0.6em;
+            opacity: 0.9;
+        }
+        @media (max-width: 700px) {
+            .integrantes { grid-template-columns: auto; }
+        }
+
+        .reveal .footnote {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            font-size: 0.42em; opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ────────────────── Portada ────────────────── -->
+<section class="centrado">
+    <img src="public/uth-logo.png" alt="Universidad Tecnológica de Honduras" class="logo-uth" />
+
+    <p class="chico" style="margin: 0 0 0.2em">
+        Maestría en Ingeniería de la Computación
+    </p>
+    <p class="mini" style="margin: 0 0 1em">Lenguajes de Programación</p>
+
+    <h1 style="font-size: 1.9em; margin-bottom: 0.1em">Ticket Admin</h1>
+    <h3 class="acento" style="font-weight: 400; font-size: 1em">
+        Mesa de ayuda con clasificación y asignación automáticas por IA
+    </h3>
+
+    <div class="integrantes">
+        <span>Kimberly Geraldezca Estrada Munguía</span>
+        <span>Asalia Alejandra Zavala Rodríguez</span>
+        <span>Aarón Josué Montes Chicas</span>
+        <span>Jorge Martín Medina Discua</span>
+    </div>
+
+    <p class="mini" style="margin-top: 1em">
+        Astro · Vue · Cloudflare Workers · MySQL · Workers AI · n8n
+    </p>
+
+    <aside class="notes">
+        Sistema completo de tickets: portal público con asistente conversacional,
+        API para automatización y panel de administración.
+    </aside>
+</section>
+
+<!-- ────────────────── Problema ────────────────── -->
+<section>
+    <h2>El problema</h2>
+    <ul>
+        <li>El soporte llega por <b>correo, chat y de palabra</b>: nada queda registrado.</li>
+        <li>Alguien tiene que <b>leer, clasificar y repartir</b> cada incidencia a mano.</li>
+        <li>El usuario no sabe <b>en qué va</b> su reporte.</li>
+        <li>Mucho de lo que llega son <b>dudas repetidas</b> que no necesitan un ticket.</li>
+    </ul>
+    <p class="acento" style="margin-top: 0.8em">
+        → Un solo canal, que filtre lo trivial y enrute el resto solo.
+    </p>
+</section>
+
+<!-- ────────────────── Propuesta ────────────────── -->
+<section>
+    <h2>La propuesta</h2>
+    <div class="rejilla">
+        <div class="tarjeta">
+            <b>Chat de soporte</b>
+            El usuario cuenta su problema en lenguaje natural. La IA intenta
+            resolverlo antes de abrir ticket.
+        </div>
+        <div class="tarjeta">
+            <b>Ticket automático</b>
+            Si no se resuelve, se crea solo: usuario, departamento y agente
+            asignado sin intervención humana.
+        </div>
+        <div class="tarjeta">
+            <b>Seguimiento</b>
+            Código público <code>TK-2026-0147</code> para consultar el estado
+            sin necesidad de cuenta.
+        </div>
+        <div class="tarjeta">
+            <b>Panel de administración</b>
+            CRUD de tickets, usuarios, departamentos, estados, prioridades,
+            roles y permisos.
+        </div>
+        <div class="tarjeta">
+            <b>API abierta</b>
+            <code>POST /api/ticket</code> permite que otros canales (n8n) creen
+            tickets.
+        </div>
+    </div>
+</section>
+
+<!-- ────────────────── Stack ────────────────── -->
+<section>
+    <h2>Stack</h2>
+    <table>
+        <tr><td><b class="acento">Astro 7</b> (SSR, <code>output: server</code>)</td><td>Páginas y Actions con tipos de punta a punta</td></tr>
+        <tr><td><b class="acento">Vue 3</b> (islas)</td><td>Solo los componentes interactivos: chat y CRUD</td></tr>
+        <tr><td><b class="acento">Cloudflare Workers</b></td><td>Ejecución en el borde, sin servidor que mantener</td></tr>
+        <tr><td><b class="acento">Hyperdrive</b></td><td>Pooling y aceleración de la conexión a MySQL</td></tr>
+        <tr><td><b class="acento">Drizzle ORM</b></td><td>Esquema y consultas tipadas sobre MySQL</td></tr>
+        <tr><td><b class="acento">Zod</b></td><td>Validación de toda entrada en el límite</td></tr>
+        <tr><td><b class="acento">Workers AI</b></td><td><code>llama-3.3-70b-instruct-fp8-fast</code></td></tr>
+        <tr><td><b class="acento">Bootstrap 5</b></td><td>UI responsiva, con modo claro/oscuro</td></tr>
+    </table>
+    <p class="mini" style="margin-top: 0.6em">
+        Sin servidor propio, sin cola de mensajes, sin servicio de IA externo: todo vive en Cloudflare.
+    </p>
+</section>
+
+<!-- ────────────────── Arquitectura ────────────────── -->
+<section>
+    <h2>Arquitectura</h2>
+    <div class="flujo" style="margin-bottom: 1em">
+        <span class="paso">Navegador / n8n</span>
+        <span class="flecha">→</span>
+        <span class="paso">Worker (Astro SSR)</span>
+        <span class="flecha">→</span>
+        <span class="paso">middleware<br /><span class="mini">sesión + contexto de DB</span></span>
+        <span class="flecha">→</span>
+        <span class="paso">Hyperdrive</span>
+        <span class="flecha">→</span>
+        <span class="paso">MySQL</span>
+    </div>
+    <div class="flujo">
+        <span class="paso">Worker</span>
+        <span class="flecha">→</span>
+        <span class="paso">binding AI</span>
+        <span class="flecha">→</span>
+        <span class="paso">Workers AI (Llama 3.3 70B)</span>
+    </div>
+    <ul class="chico" style="margin-top: 1em">
+        <li>El middleware decide <b>quién pasa</b> y abre la conexión <b>solo en las rutas que tocan la base</b>.</li>
+        <li>Drizzle se expone como un <code>Proxy</code> sobre <code>AsyncLocalStorage</code>: los repositorios no reciben la conexión por parámetro.</li>
+    </ul>
+    <aside class="notes">
+        Una conexión por request; Hyperdrive hace el pooling del lado de Cloudflare.
+    </aside>
+</section>
+
+<!-- ────────────────── Capas ────────────────── -->
+<section>
+    <h2>Organización del código</h2>
+    <pre><code data-trim data-noescape class="text">src/
+├── middleware.ts       sesión + apertura del contexto de DB
+├── actions/            Astro Actions: CRUD del dashboard, login
+├── pages/
+│   ├── api/            ticket.ts (n8n) · chat.ts (SSE)
+│   ├── reportar.astro  chat público      buscar.astro  consulta pública
+│   └── dashboard/      panel privado
+├── components/         SoporteChat.vue · CrudManager.vue
+└── data/
+    ├── schema/         tablas Drizzle
+    ├── repositories/   acceso a datos
+    └── validators/     esquemas Zod
+</code></pre>
+    <p class="chico">
+        Un camino único por capa: <b>validador → repositorio → action/endpoint</b>.
+        Nada consulta la base directamente desde una página.
+    </p>
+</section>
+
+<!-- ────────────────── Modelo de datos ────────────────── -->
+<section>
+    <h2>Modelo de datos</h2>
+    <div class="rejilla">
+        <div class="tarjeta"><b>tickets</b> título, descripción, id público, estado, prioridad, departamento, creador, asignado a, fechas</div>
+        <div class="tarjeta"><b>usuarios</b> hash PBKDF2, activo, <i>anónimo</i>, departamento</div>
+        <div class="tarjeta"><b>departamentos</b> unidad que atiende; base de la clasificación por IA</div>
+        <div class="tarjeta"><b>estados / prioridades</b> catálogos configurables, con color</div>
+        <div class="tarjeta"><b>roles · permisos</b> con sus tablas puente <code>usuarios_roles</code> y <code>roles_permisos</code></div>
+    </div>
+    <p class="chico" style="margin-top: 0.8em">
+        <span class="acento">Usuario anónimo:</span> quien reporta desde el chat no
+        tiene cuenta. Se crea un usuario sin contraseña e inactivo, para que el
+        ticket tenga dueño y el mismo correo reutilice el registro.
+    </p>
+</section>
+
+<!-- ────────────────── Recorrido del usuario ────────────────── -->
+<section>
+    <h2>Recorrido del usuario</h2>
+    <div class="flujo" style="margin-bottom: 1.2em">
+        <span class="paso">/reportar<br /><span class="mini">describe el problema</span></span>
+        <span class="flecha">→</span>
+        <span class="paso">IA sugiere<br /><span class="mini">1–3 soluciones</span></span>
+        <span class="flecha">→</span>
+        <span class="paso ok">¿resuelto?<br /><span class="mini">sin ticket</span></span>
+    </div>
+    <div class="flujo">
+        <span class="paso">si no</span>
+        <span class="flecha">→</span>
+        <span class="paso">recopila nombre,<br />correo y detalle</span>
+        <span class="flecha">→</span>
+        <span class="paso">confirma</span>
+        <span class="flecha">→</span>
+        <span class="paso">ticket + código</span>
+        <span class="flecha">→</span>
+        <span class="paso">/buscar</span>
+    </div>
+    <p class="chico" style="margin-top: 1em">
+        El primer filtro es el que más ahorra: <b>lo trivial no llega a la cola</b>.
+    </p>
+</section>
+
+<!-- ────────────────── El chat ────────────────── -->
+<section>
+    <h2>El asistente</h2>
+    <ul class="chico">
+        <li>El <i>system prompt</i> fija el <b>flujo</b> (clasificar → sugerir → recopilar → confirmar) y el <b>alcance</b>: fuera de soporte, no responde.</li>
+        <li>Respuesta en <b>streaming SSE</b>: el usuario ve el texto aparecer token a token.</li>
+        <li>Pide <b>confirmación explícita</b> antes de registrar si el problema es físico o de gravedad media/alta.</li>
+    </ul>
+    <p class="chico acento" style="margin-top: 0.6em">
+        ¿Cómo sabe el front que ya hay datos suficientes? Un marcador al final del mensaje:
+    </p>
+    <pre><code data-trim class="json">&lt;&lt;TICKET&gt;&gt;{"nombre":"...","email":"...","titulo":"...","descripcion":"..."}</code></pre>
+    <p class="mini">
+        El marcador se recorta antes de pintar el mensaje: el usuario nunca lo ve;
+        solo se muestra la tarjeta de confirmación.
+    </p>
+</section>
+
+<!-- ────────────────── El endpoint ────────────────── -->
+<section>
+    <h2><code>POST /api/ticket</code></h2>
+    <p class="chico">Entra lo mínimo — el endpoint resuelve el resto:</p>
+    <pre><code data-trim class="json">{ "nombre": "Ana", "email": "ana@ejemplo.com",
+  "titulo": "No puedo entrar al correo",
+  "descripcion": "Error de credenciales desde ayer" }</code></pre>
+    <ol class="chico">
+        <li>Busca el usuario por correo; si no existe, crea uno <b>anónimo</b>.</li>
+        <li>Asigna estado y prioridad iniciales.</li>
+        <li><b class="acento">Clasifica el departamento con IA</b> a partir del título y la descripción.</li>
+        <li><b class="acento">Asigna al agente con menos tickets</b> de ese departamento.</li>
+        <li>Genera el código público y lo devuelve.</li>
+    </ol>
+    <pre><code data-trim class="json">{ "id": 147, "idPublico": "TK-2026-0147" }</code></pre>
+</section>
+
+<!-- ────────────────── Reparto ────────────────── -->
+<section>
+    <h2>Clasificar y repartir</h2>
+    <ul class="chico">
+        <li>Al modelo se le pasa <b>la lista de departamentos vigente</b> y debe responder con uno; se cotejan por nombre en ambos sentidos.</li>
+        <li>Si el modelo falla o responde cualquier cosa, <b>se usa el primer departamento activo</b>: nunca se pierde un ticket por culpa de la IA.</li>
+        <li>El reparto es un <code>COUNT</code> por agente activo del departamento — <b>gana el que menos carga tiene</b>.</li>
+    </ul>
+    <pre><code data-trim class="ts">const departamentoId = await clasificarDepartamento(`${titulo}. ${descripcion}`, deps);
+const asignadoAId = departamentoId
+    ? await ticketsRepository.agenteConMenosTickets(departamentoId)
+    : null;</code></pre>
+    <p class="mini">Los departamentos se administran desde el panel: agregar uno cambia la clasificación sin tocar código.</p>
+</section>
+
+<!-- ────────────────── n8n ────────────────── -->
+<section>
+    <h2>Integración con n8n</h2>
+    <div class="flujo" style="margin-bottom: 1em">
+        <span class="paso">Correo · formulario · WhatsApp</span>
+        <span class="flecha">→</span>
+        <span class="paso">n8n</span>
+        <span class="flecha">→</span>
+        <span class="paso">HTTP Request<br /><span class="mini">POST /api/ticket</span></span>
+        <span class="flecha">→</span>
+        <span class="paso">Ticket clasificado<br />y asignado</span>
+    </div>
+    <ul class="chico">
+        <li>El mismo endpoint que usa el chat sirve para cualquier canal: <b>una sola puerta de entrada</b>.</li>
+        <li>n8n solo envía cuatro campos; <b>no resuelve ids ni asignaciones</b>.</li>
+        <li>La respuesta trae el código de seguimiento, listo para contestárselo al usuario.</li>
+    </ul>
+    <p class="chico alerta">
+        Nota: el endpoint es público (lo invoca el navegador en <code>/reportar</code>).
+        Expuesto a Internet, hay que ponerle Cloudflare Access o rate limiting delante.
+    </p>
+</section>
+
+<!-- ────────────────── Código público ────────────────── -->
+<section>
+    <h2>Código de seguimiento</h2>
+    <h3 class="centrado acento" style="font-size: 2.2em; margin: 0.4em 0">TK-2026-0147</h3>
+    <ul class="chico">
+        <li><b>Legible por teléfono:</b> se dicta y se anota; un UUID no.</li>
+        <li>Lleva el <b>año de creación</b> y el id del ticket con ceros a la izquierda.</li>
+        <li><b>No expone el id interno</b> en la URL pública de consulta.</li>
+        <li>Se calcula tras el <code>INSERT</code> (el autoincremental no existe antes) y se guarda en un <code>UPDATE</code> dentro del repositorio: <b>todas las vías de creación lo heredan</b>.</li>
+    </ul>
+    <pre><code data-trim class="ts">export const formatIdPublico = (id, year = new Date().getFullYear()) =>
+    `TK-${year}-${String(id).padStart(4, '0')}`;</code></pre>
+</section>
+
+<!-- ────────────────── Dashboard ────────────────── -->
+<section>
+    <h2>Panel de administración</h2>
+    <ul class="chico">
+        <li><b>Resumen:</b> totales, tickets por estado y prioridad, actividad reciente.</li>
+        <li><b>Un solo componente</b> — <code>CrudManager.vue</code> — sirve las siete secciones: recibe columnas, campos y el nombre del <i>namespace</i> de Actions.</li>
+        <li>Alta, edición, borrado, badges de color, truncado, paginación en cliente con tamaño de página configurable, y <b>vista de tarjetas en móvil</b>.</li>
+        <li>Acción por fila reutilizable (ej. <i>restablecer contraseña</i>, que devuelve una clave generada y la copia al portapapeles).</li>
+    </ul>
+    <p class="chico acento">
+        Agregar un CRUD nuevo = una página de ~30 líneas declarando columnas y campos.
+    </p>
+</section>
+
+<!-- ────────────────── Seguridad ────────────────── -->
+<section>
+    <h2>Seguridad</h2>
+    <div class="rejilla">
+        <div class="tarjeta"><b>Middleware</b> <code>/dashboard</code> y las Actions privadas exigen sesión; las públicas están explícitamente listadas.</div>
+        <div class="tarjeta"><b>Contraseñas</b> PBKDF2-SHA256, 100 000 iteraciones, salt por usuario. Nunca en claro.</div>
+        <div class="tarjeta"><b>Validación</b> Zod en toda entrada; el endpoint público además recorta longitudes y extrae el correo.</div>
+        <div class="tarjeta"><b>Secretos</b> credenciales por variables de entorno y bindings; el repositorio no lleva ninguna.</div>
+        <div class="tarjeta alerta"><b>Pendiente</b> permisos por rol aplicados en cada action, rate limiting y expiración de sesión.</div>
+    </div>
+</section>
+
+<!-- ────────────────── Despliegue ────────────────── -->
+<section>
+    <h2>Despliegue</h2>
+    <pre><code data-trim class="bash">pnpm install
+cp .env.example .env          # credenciales de MySQL + cadena de Hyperdrive
+pnpm drizzle-kit push         # crea el esquema
+pnpm seed:user admin@ejemplo.com admin1234 "Admin User"
+
+pnpm dev                      # local: localhost:4321
+pnpm build && pnpm wrangler deploy</code></pre>
+    <ul class="chico">
+        <li>Un solo artefacto: el Worker sirve páginas, API y estáticos.</li>
+        <li>El binding de IA es <b>remoto también en desarrollo</b>: se prueba contra el modelo real.</li>
+        <li>Requisito operativo: al menos un estado, una prioridad y un departamento dados de alta.</li>
+    </ul>
+</section>
+
+<!-- ────────────────── Siguientes pasos ────────────────── -->
+<section>
+    <h2>Siguientes pasos</h2>
+    <ul class="chico">
+        <li><b>Historial y comentarios</b> por ticket, con notificación por correo al cambiar de estado.</li>
+        <li><b>SLA:</b> fecha de vencimiento según prioridad y alerta al vencer (el campo ya existe).</li>
+        <li><b>Permisos efectivos:</b> aplicar roles y permisos en cada action, no solo administrarlos.</li>
+        <li><b>Paginación en servidor</b> cuando las tablas crezcan.</li>
+        <li><b>Métricas:</b> tiempo de resolución y acierto de la clasificación por IA.</li>
+    </ul>
+</section>
+
+<!-- ────────────────── Cierre ────────────────── -->
+<section class="centrado">
+    <h2>En una línea</h2>
+    <p style="font-size: 1.15em; line-height: 1.5">
+        Un canal de soporte que <span class="acento">resuelve lo simple solo</span>,
+        <span class="acento">clasifica y reparte</span> lo demás,
+        y deja <span class="acento">trazabilidad</span> de todo.
+    </p>
+    <p class="chico" style="margin-top: 1.5em">¿Preguntas?</p>
+    <div class="footnote">Ticket Admin · Astro + Cloudflare Workers + Workers AI</div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/highlight/highlight.js"></script>
+<script>
+    Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+        transition: "slide",
+        plugins: [RevealNotes, RevealHighlight],
+    });
+</script>
+</body>
+</html>
