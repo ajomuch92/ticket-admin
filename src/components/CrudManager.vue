@@ -78,6 +78,32 @@ const PW_CHARS =
 
 const items = ref<Item[]>([...props.initialItems]);
 const showForm = ref(false);
+
+// Paginación en cliente: las actions .list() devuelven la colección completa.
+// ponytail: si una tabla crece a miles de filas, mover el slice al repositorio.
+const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+const perPage = ref(10);
+const page = ref(1);
+
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(items.value.length / perPage.value)),
+);
+const pagedItems = computed(() =>
+    items.value.slice((page.value - 1) * perPage.value, page.value * perPage.value),
+);
+const rangeFrom = computed(() =>
+    items.value.length === 0 ? 0 : (page.value - 1) * perPage.value + 1,
+);
+const rangeTo = computed(() =>
+    Math.min(page.value * perPage.value, items.value.length),
+);
+
+// Al borrar la última fila de una página (o achicar el tamaño) la página actual
+// puede quedar fuera de rango.
+watch([() => items.value.length, perPage], () => {
+    if (page.value > totalPages.value) page.value = totalPages.value;
+});
+
 const editing = ref<Item | null>(null);
 const form = ref<Record<string, any>>({});
 const revealed = ref<Record<string, boolean>>({}); // por-campo: password visible o no
@@ -301,7 +327,7 @@ async function runRowAction(item: Item): Promise<void> {
                             Sin registros
                         </td>
                     </tr>
-                    <tr v-for="item in items" :key="item[idKey]">
+                    <tr v-for="item in pagedItems" :key="item[idKey]">
                         <td
                             v-for="c in columns"
                             :key="c.key"
@@ -357,6 +383,49 @@ async function runRowAction(item: Item): Promise<void> {
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div
+            class="card-footer bg-body d-flex flex-wrap align-items-center justify-content-between gap-2"
+        >
+            <div class="d-flex align-items-center gap-2">
+                <label class="small text-secondary text-nowrap" for="crud-per-page">
+                    Por página
+                </label>
+                <select
+                    id="crud-per-page"
+                    v-model.number="perPage"
+                    class="form-select form-select-sm w-auto"
+                >
+                    <option v-for="n in PER_PAGE_OPTIONS" :key="n" :value="n">{{ n }}</option>
+                </select>
+            </div>
+
+            <span class="small text-secondary">
+                {{ rangeFrom }}–{{ rangeTo }} de {{ items.length }}
+            </span>
+
+            <div class="btn-group btn-group-sm">
+                <button
+                    class="btn btn-outline-secondary"
+                    :disabled="page <= 1"
+                    aria-label="Página anterior"
+                    @click="page--"
+                >
+                    ‹
+                </button>
+                <span class="btn btn-outline-secondary disabled text-nowrap">
+                    {{ page }} / {{ totalPages }}
+                </span>
+                <button
+                    class="btn btn-outline-secondary"
+                    :disabled="page >= totalPages"
+                    aria-label="Página siguiente"
+                    @click="page++"
+                >
+                    ›
+                </button>
+            </div>
         </div>
     </div>
 
