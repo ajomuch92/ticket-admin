@@ -18,6 +18,13 @@ const streaming = ref(false); // true cuando ya llegan tokens (dejó de "pensar"
 const ticketData = ref(null); // { nombre, email, titulo, descripcion }
 const creado = ref(null); // id del ticket creado
 const scroller = ref(null);
+const inputEl = ref(null);
+
+// Al terminar la respuesta (o al fallar) devuelve el foco al campo de texto.
+// El input está :disabled mientras loading, así que hay que esperar al render.
+watch(loading, (v) => {
+    if (!v) nextTick(() => inputEl.value?.focus());
+});
 
 watch(
     () => messages.value.length,
@@ -203,6 +210,7 @@ async function crear() {
             </button>
             <form v-else class="d-flex gap-2" @submit.prevent="send">
                 <input
+                    ref="inputEl"
                     v-model="input"
                     type="text"
                     class="form-control"
