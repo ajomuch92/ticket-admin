@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
+import { verifyChatToken } from "../../lib/chatToken";
 
 export const prerender = false;
 
@@ -20,7 +21,16 @@ Cuando corresponda crear el ticket (y ya tengas los tres datos, y con la confirm
 <<TICKET>>{"nombre":"...","email":"...","titulo":"resumen corto (incluye categoría y gravedad)","descripcion":"detalle del problema y lo que ya se intentó"}
 No incluyas esa línea antes de tener los tres datos, ni antes de la confirmación cuando el problema sea físico/medio/grave.`;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
+    // Solo desde la propia página: mismo Origin + token firmado emitido en /reportar.
+    const origin = request.headers.get("origin");
+    if (origin && origin !== url.origin) {
+        return new Response("Origen no permitido", { status: 403 });
+    }
+    if (!(await verifyChatToken(request.headers.get("x-chat-token")))) {
+        return new Response("Token inválido o expirado", { status: 403 });
+    }
+
     let messages: unknown;
     try {
         ({ messages } = await request.json());

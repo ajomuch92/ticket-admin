@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from "astro:actions";
-import { z } from "astro:schema";
+import { z } from "astro/zod";
 import { count, eq, desc } from "drizzle-orm";
 import { randomString } from "complete-js-utils";
 import { hashPassword } from "../data/password.js";
@@ -48,6 +48,40 @@ const idInput = z.object({ id });
 const notFound = (que: string) =>
     new ActionError({ code: "NOT_FOUND", message: `${que} no encontrado` });
 
+/** Detecta violación de llave foránea de MySQL (fila referenciada). */
+function isFkViolation(e: unknown): boolean {
+    const err = e as { code?: string; errno?: number; cause?: { code?: string; errno?: number } };
+    const code = err?.code ?? err?.cause?.code;
+    const errno = err?.errno ?? err?.cause?.errno;
+    return (
+        code === "ER_ROW_IS_REFERENCED_2" ||
+        code === "ER_ROW_IS_REFERENCED" ||
+        errno === 1451
+    );
+}
+
+/** Ejecuta un delete de repositorio; convierte errores de FK y "no existe" en
+ *  ActionError con mensaje claro. */
+async function deleteOr409<T>(
+    fn: () => Promise<T | null>,
+    que: string,
+): Promise<T> {
+    let result: T | null;
+    try {
+        result = await fn();
+    } catch (e) {
+        if (isFkViolation(e)) {
+            throw new ActionError({
+                code: "CONFLICT",
+                message: `No se puede eliminar: hay registros que dependen de este ${que.toLowerCase()}.`,
+            });
+        }
+        throw e;
+    }
+    if (!result) throw notFound(que);
+    return result;
+}
+
 export const server = {
     // ─────────────── Roles ───────────────
     roles: {
@@ -77,11 +111,7 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const rol = await rolesRepository.delete(id);
-                if (!rol) throw notFound("Rol");
-                return rol;
-            },
+            handler: ({ id }) => deleteOr409(() => rolesRepository.delete(id), "Rol"),
         }),
     },
 
@@ -113,11 +143,8 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const permiso = await permisosRepository.delete(id);
-                if (!permiso) throw notFound("Permiso");
-                return permiso;
-            },
+            handler: ({ id }) =>
+                deleteOr409(() => permisosRepository.delete(id), "Permiso"),
         }),
     },
 
@@ -173,11 +200,8 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const usuario = await usuariosRepository.delete(id);
-                if (!usuario) throw notFound("Usuario");
-                return usuario;
-            },
+            handler: ({ id }) =>
+                deleteOr409(() => usuariosRepository.delete(id), "Usuario"),
         }),
         // Genera una contraseña aleatoria, la asigna al usuario y la devuelve
         // (en claro, una sola vez) para mostrarla al admin.
@@ -225,11 +249,8 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const prioridad = await prioridadesRepository.delete(id);
-                if (!prioridad) throw notFound("Prioridad");
-                return prioridad;
-            },
+            handler: ({ id }) =>
+                deleteOr409(() => prioridadesRepository.delete(id), "Prioridad"),
         }),
     },
 
@@ -261,11 +282,8 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const estado = await estadosRepository.delete(id);
-                if (!estado) throw notFound("Estado");
-                return estado;
-            },
+            handler: ({ id }) =>
+                deleteOr409(() => estadosRepository.delete(id), "Estado"),
         }),
     },
 
@@ -307,11 +325,8 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const ticket = await ticketsRepository.delete(id);
-                if (!ticket) throw notFound("Ticket");
-                return ticket;
-            },
+            handler: ({ id }) =>
+                deleteOr409(() => ticketsRepository.delete(id), "Ticket"),
         }),
     },
 
@@ -393,11 +408,8 @@ export const server = {
         }),
         delete: defineAction({
             input: idInput,
-            handler: async ({ id }) => {
-                const dep = await departamentosRepository.delete(id);
-                if (!dep) throw notFound("Departamento");
-                return dep;
-            },
+            handler: ({ id }) =>
+                deleteOr409(() => departamentosRepository.delete(id), "Departamento"),
         }),
     },
 };

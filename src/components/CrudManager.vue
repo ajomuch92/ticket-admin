@@ -2,6 +2,7 @@
 import { ref, watch, computed } from "vue";
 import { actions } from "astro:actions";
 import { randomString } from "complete-js-utils";
+import { isDark } from "is-dark-color-hsp";
 import { showToast, showCopyToast } from "../lib/toast";
 
 type FieldType =
@@ -12,7 +13,8 @@ type FieldType =
     | "select-number"
     | "checkbox"
     | "password"
-    | "date";
+    | "date"
+    | "color";
 
 interface Column {
     key: string; // admite ruta anidada "estado.nombre"
@@ -20,6 +22,8 @@ interface Column {
     align?: "center" | "end";
     /** Ancho máx en px: trunca con "…" y muestra el texto completo en el title. */
     truncate?: number;
+    /** Ruta al color hex (ej. "prioridad.color"): pinta el valor como badge. */
+    badgeColor?: string;
 }
 
 interface FieldOption {
@@ -91,22 +95,39 @@ const visibleFields = computed(() =>
 );
 
 // Modal de confirmación (reemplaza confirm() nativo). askConfirm devuelve Promise.
-interface ConfirmState {
-    show: boolean;
-    message: string;
-    resolve: ((value: boolean) => void) | null;
-}
-const confirmState = ref<ConfirmState>({ show: false, message: "", resolve: null });
+const confirmState = ref<{ show: boolean; message: string }>({
+    show: false,
+    message: "",
+});
+const confirmLoading = ref(false); // true mientras corre la operación confirmada
+const confirmResolve = ref<((value: boolean) => void) | null>(null);
 const confirmDialog = ref<HTMLDialogElement | null>(null);
 
 function askConfirm(message: string): Promise<boolean> {
     return new Promise((resolve) => {
-        confirmState.value = { show: true, message, resolve };
+        confirmState.value = { show: true, message };
+        confirmResolve.value = resolve;
     });
 }
-function resolveConfirm(value: boolean): void {
-    confirmState.value.resolve?.(value);
-    confirmState.value = { show: false, message: "", resolve: null };
+/** Botón "Confirmar": resuelve true y deja el modal abierto con spinner;
+ *  el llamador lo cierra con closeConfirm() al terminar. */
+function onConfirm(): void {
+    confirmLoading.value = true;
+    const r = confirmResolve.value;
+    confirmResolve.value = null;
+    r?.(true);
+}
+/** Cancelar / backdrop / Esc: no hace nada durante la operación. */
+function onCancel(): void {
+    if (confirmLoading.value) return;
+    const r = confirmResolve.value;
+    confirmResolve.value = null;
+    confirmState.value = { show: false, message: "" };
+    r?.(false);
+}
+function closeConfirm(): void {
+    confirmLoading.value = false;
+    confirmState.value = { show: false, message: "" };
 }
 
 watch(
@@ -129,6 +150,12 @@ const getVal = (item: Item, key: string): unknown =>
 
 const alignClass = (c: Column): string =>
     c.align === "center" ? "text-center" : c.align === "end" ? "text-end" : "";
+
+// Badge coloreado: fondo = color hex, texto blanco/negro según is-dark-color-hsp.
+function badgeStyle(color: unknown): Record<string, string> {
+    if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) return {};
+    return { backgroundColor: color, color: isDark(color) ? "#fff" : "#000" };
+}
 
 // Sincroniza el estado con el <dialog> nativo (showModal/close disparan la animación).
 watch(showForm, (open) => {
@@ -213,7 +240,9 @@ async function remove(item: Item): Promise<void> {
         `¿Eliminar ${props.titular.toLowerCase()} #${item[props.idKey]}?`,
     );
     if (!ok) return;
+    // El modal sigue abierto con spinner mientras corre el delete.
     const { error: err } = await ns().delete({ [props.idKey]: item[props.idKey] });
+    closeConfirm();
     if (err) {
         showToast(err.message || "Error al eliminar", "danger");
         return;
@@ -229,6 +258,7 @@ async function runRowAction(item: Item): Promise<void> {
     const { data, error: err } = await ns()[cfg.actionName]({
         [props.idKey]: item[props.idKey],
     });
+    if (cfg.confirm) closeConfirm();
     if (err) {
         showToast(err.message || "Error", "danger");
         return;
@@ -284,6 +314,14 @@ async function runRowAction(item: Item): Promise<void> {
                                 :class="getVal(item, c.key) ? 'bg-success' : 'bg-secondary'"
                             >
                                 {{ getVal(item, c.key) ? "Sí" : "No" }}
+                            </span>
+                            <span
+                                v-else-if="c.badgeColor"
+                                class="badge"
+                                :class="{ 'bg-secondary': !getVal(item, c.badgeColor) }"
+                                :style="badgeStyle(getVal(item, c.badgeColor))"
+                            >
+                                {{ getVal(item, c.key) ?? "—" }}
                             </span>
                             <span
                                 v-else-if="c.truncate"
@@ -427,6 +465,13 @@ async function runRowAction(item: Item): Promise<void> {
                                 </button>
                             </div>
                             <input
+                                v-else-if="fl.type === 'color'"
+                                v-model="form[fl.key]"
+                                type="color"
+                                class="form-control form-control-color"
+                                :required="fl.required"
+                            />
+                            <input
                                 v-else
                                 v-model="form[fl.key]"
                                 :type="fl.type === 'number' ? 'number' : fl.type === 'date' ? 'date' : 'text'"
@@ -448,6 +493,11 @@ async function runRowAction(item: Item): Promise<void> {
                             Cancelar
                         </button>
                         <button type="submit" class="btn btn-primary" :disabled="saving">
+                            <span
+                                v-if="saving"
+                                class="spinner-border spinner-border-sm me-1"
+                                aria-hidden="true"
+                            ></span>
                             {{ saving ? "Guardando…" : "Guardar" }}
                         </button>
                     </div>
@@ -460,8 +510,9 @@ async function runRowAction(item: Item): Promise<void> {
     <dialog
         ref="confirmDialog"
         class="crud-dialog"
-        @click="(e) => e.target === confirmDialog && resolveConfirm(false)"
-        @close="resolveConfirm(false)"
+        @click="(e) => e.target === confirmDialog && onCancel()"
+        @close="onCancel"
+        @cancel="(e) => confirmLoading && e.preventDefault()"
     >
         <div class="card border-0">
             <div class="card-body">
@@ -470,16 +521,23 @@ async function runRowAction(item: Item): Promise<void> {
                     <button
                         type="button"
                         class="btn btn-light"
-                        @click="resolveConfirm(false)"
+                        :disabled="confirmLoading"
+                        @click="onCancel"
                     >
                         Cancelar
                     </button>
                     <button
                         type="button"
                         class="btn btn-primary"
-                        @click="resolveConfirm(true)"
+                        :disabled="confirmLoading"
+                        @click="onConfirm"
                     >
-                        Confirmar
+                        <span
+                            v-if="confirmLoading"
+                            class="spinner-border spinner-border-sm me-1"
+                            aria-hidden="true"
+                        ></span>
+                        {{ confirmLoading ? "Procesando…" : "Confirmar" }}
                     </button>
                 </div>
             </div>

@@ -24,5 +24,13 @@
     "ai" : {
         "binding": "AI",
         "remote": true
-    }
+    },
+    // Rate limiter para endpoints públicos: 30 solicitudes por minuto por clave.
+    "ratelimits": [
+        {
+            "name": "PUBLIC_RATE_LIMITER",
+            "namespace_id": "1001",
+            "simple": { "limit": 30, "period": 60 }
+        }
+    ]
 }

@@ -2,6 +2,9 @@
 import Layout from "../layouts/Layout.astro";
 import SoporteChat from "../components/SoporteChat.vue";
 import { ArrowLeft } from "@lucide/astro";
+import { issueChatToken } from "../lib/chatToken";
+
+const chatToken = await issueChatToken();
 ---
 
 <Layout title="Reportar un problema | Ticket Admin">
@@ -24,6 +27,6 @@ import { ArrowLeft } from "@lucide/astro";
             nombre, correo y los detalles. Si deseas reportar un problema de otra forma, puedes enviarnos un correo a
             <a href="mailto:admin@ejemplo.com">admin@ejemplo.com</a>
         </p>
-        <SoporteChat client:load />
+        <SoporteChat client:load token={chatToken} />
     </div>
 </Layout>
