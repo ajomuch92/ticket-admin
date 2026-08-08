@@ -7,6 +7,7 @@ import {
     departamentosRepository,
     ticketsRepository,
 } from "../../data/repositories";
+import { matchOpcion } from "../../lib/clasificar";
 
 export const prerender = false;
 
@@ -26,30 +27,27 @@ function extractEmail(s: string): string | null {
     return email && email.length <= 150 ? email : null;
 }
 
-// Le pasa la lista de departamentos al modelo y devuelve el id del que mejor
-// encaje. Fallback: el primero. null si no hay departamentos.
-async function clasificarDepartamento(
+// Le pasa una lista de opciones al modelo y devuelve la que mejor encaje.
+// null = el modelo falló o no hubo match; el fallback lo decide cada llamador.
+async function clasificar<T extends { nombre: string }>(
     texto: string,
-    deps: { id: number; nombre: string }[],
-): Promise<number | null> {
-    if (deps.length === 0) return null;
-    const lista = deps.map((d) => `- ${d.nombre}`).join("\n");
+    opciones: T[],
+    instruccion: string,
+): Promise<T | null> {
+    if (opciones.length === 0) return null;
+    const lista = opciones.map((o) => `- ${o.nombre}`).join("\n");
     try {
         const res = await env.AI.run(MODEL, {
             messages: [
                 {
                     role: "user",
-                    content: `Clasifica este problema de soporte en UNO de estos departamentos. Responde SOLO con el nombre exacto del departamento, sin explicación.\n\nDepartamentos:\n${lista}\n\nProblema: ${texto}`,
+                    content: `${instruccion}\n\nOpciones:\n${lista}\n\nProblema: ${texto}`,
                 },
             ],
         });
-        const ans = (res.response ?? "").trim().toLowerCase();
-        const match =
-            deps.find((d) => ans.includes(d.nombre.toLowerCase())) ??
-            deps.find((d) => d.nombre.toLowerCase().includes(ans));
-        return (match ?? deps[0]).id;
+        return matchOpcion(res.response ?? "", opciones);
     } catch {
-        return deps[0].id;
+        return null;
     }
 }
 
@@ -84,21 +82,42 @@ export const POST: APIRoute = async ({ request }) => {
         });
     }
 
+    // El estado inicial sí es siempre el primero por `orden` ("Por Hacer").
     const [estado] = await estadosRepository.findAll();
-    const [prioridad] = await prioridadesRepository.findAll();
-    if (!estado || !prioridad || !user) {
+    const prioridades = await prioridadesRepository.findAll();
+    if (!estado || prioridades.length === 0 || !user) {
         return json(
             { error: "No hay estados/prioridades configurados." },
             400,
         );
     }
 
-    // Clasificar por IA en un departamento y asignar al agente menos cargado.
+    // Si el modelo no responde caemos a "Media": la lista viene ordenada por
+    // `orden ASC`, así que tomar la primera enterraría el ticket en la más baja.
+    const prioridadPorDefecto =
+        prioridades.find((p) => p.nombre.toLowerCase() === "media") ??
+        prioridades[Math.floor(prioridades.length / 2)] ??
+        prioridades[0];
+
+    const texto = `${titulo}. ${descripcion ?? ""}`;
     const deps = (await departamentosRepository.findAll()).filter((d) => d.activo);
-    const departamentoId = await clasificarDepartamento(
-        `${titulo}. ${descripcion ?? ""}`,
-        deps,
-    );
+
+    // Dos clasificaciones independientes: en paralelo para no encadenar latencia.
+    const [departamento, prioridad] = await Promise.all([
+        clasificar(
+            texto,
+            deps,
+            "Clasifica este problema de soporte en UNO de estos departamentos. Responde SOLO con el nombre exacto del departamento, sin explicación.",
+        ),
+        clasificar(
+            texto,
+            prioridades,
+            "Clasifica la urgencia de este problema de soporte en UNA de estas prioridades. Responde SOLO con el nombre exacto de la prioridad, sin explicación.",
+        ),
+    ]);
+
+    const departamentoId = departamento?.id ?? deps[0]?.id ?? null;
+    const prioridadId = (prioridad ?? prioridadPorDefecto).id;
     const asignadoAId = departamentoId
         ? await ticketsRepository.agenteConMenosTickets(departamentoId)
         : null;
@@ -108,7 +127,7 @@ export const POST: APIRoute = async ({ request }) => {
         titulo,
         descripcion,
         estadoId: estado.id,
-        prioridadId: prioridad.id,
+        prioridadId,
         creadorId: user.id,
         departamentoId: departamentoId ?? undefined,
         asignadoAId: asignadoAId ?? undefined,
