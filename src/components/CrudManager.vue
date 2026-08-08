@@ -109,6 +109,7 @@ const form = ref<Record<string, any>>({});
 const revealed = ref<Record<string, boolean>>({}); // por-campo: password visible o no
 const error = ref("");
 const saving = ref(false);
+const refreshing = ref(false);
 const dialog = ref<HTMLDialogElement | null>(null);
 
 // actions se indexa por nombre dinámico: casteamos para el acceso genérico.
@@ -243,6 +244,17 @@ async function reload(): Promise<void> {
     if (data) items.value = data;
 }
 
+async function refresh(): Promise<void> {
+    refreshing.value = true;
+    try {
+        await reload();
+    } catch {
+        showToast("Error al actualizar", "danger");
+    } finally {
+        refreshing.value = false;
+    }
+}
+
 async function save(): Promise<void> {
     saving.value = true;
     error.value = "";
@@ -299,9 +311,24 @@ async function runRowAction(item: Item): Promise<void> {
     <div class="card">
         <div class="card-header bg-body d-flex align-items-center justify-content-between">
             <h2 class="fs-6 fw-semibold m-0">{{ plural }}</h2>
-            <button class="btn btn-primary btn-sm" @click="openCreate">
-                Nuevo {{ titular }}
-            </button>
+            <div class="d-flex gap-2">
+                <button
+                    class="btn btn-outline-secondary btn-sm"
+                    :disabled="refreshing"
+                    aria-label="Actualizar tabla"
+                    @click="refresh"
+                >
+                    <span
+                        v-if="refreshing"
+                        class="spinner-border spinner-border-sm me-1"
+                        aria-hidden="true"
+                    ></span>
+                    {{ refreshing ? "Actualizando…" : "Actualizar" }}
+                </button>
+                <button class="btn btn-primary btn-sm" @click="openCreate">
+                    Nuevo {{ titular }}
+                </button>
+            </div>
         </div>
 
         <div class="table-responsive">
