@@ -17,6 +17,7 @@
     "@astrojs/vue": "^7.0.1",
     "@lucide/astro": "^1.28.0",
     "@lucide/vue": "^1.28.0",
+    "@vueuse/core": "^14.4.0",
     "astro": "^7.1.6",
     "complete-js-utils": "^1.1.2",
     "drizzle-orm": "^0.45.2",
