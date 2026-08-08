@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
+import { useTimeoutPoll, useDocumentVisibility } from "@vueuse/core";
 import { actions } from "astro:actions";
 import { randomString } from "complete-js-utils";
 import { isDark } from "is-dark-color-hsp";
@@ -65,12 +66,15 @@ interface Props {
     idKey?: string;
     /** Acción extra por fila; llama actions[entity][actionName]({ id }). */
     rowAction?: RowAction | null;
+    /** Refresco automático en ms. 0 lo desactiva. */
+    pollInterval?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     initialItems: () => [],
     idKey: "id",
     rowAction: null,
+    pollInterval: 1500,
 });
 
 const PW_CHARS =
@@ -254,6 +258,23 @@ async function refresh(): Promise<void> {
         refreshing.value = false;
     }
 }
+
+// "Realtime" emulado: useTimeoutPoll espera a que reload() termine antes de
+// agendar el siguiente tick, así que no apila requests si la red va lenta.
+const visibility = useDocumentVisibility();
+const poll = useTimeoutPoll(
+    async () => {
+        // No refrescar en pestaña oculta ni con un modal abierto (pisaría la edición).
+        if (visibility.value !== "visible" || showForm.value || confirmState.value.show)
+            return;
+        await reload().catch(() => {}); // un fallo puntual no debe cortar el ciclo
+    },
+    () => props.pollInterval,
+    { immediate: false }, // arranca en onMounted: el setup también corre en el SSR
+);
+onMounted(() => {
+    if (props.pollInterval > 0) poll.resume();
+});
 
 async function save(): Promise<void> {
     saving.value = true;
